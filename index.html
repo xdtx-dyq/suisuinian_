@@ -1,0 +1,3164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#101519">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="碎碎念">
+<title>碎碎念</title>
+<style id="app-css">
+/* ============ 主题令牌 · 夜间（默认） ============ */
+:root,html[data-theme="dark"]{
+  color-scheme:dark;
+  /* 暗面层级 —— 带冷灰调的墨黑，非纯黑 */
+  --bg:#101519;
+  --bg-soft:#0A0E12;
+  --card:#161C21;
+  --raised:#1B2329;
+  --drawer:#0C1014;
+  --panel:#0F1418;
+  /* 文字 —— 暖燕麦灰，低饱和温润 */
+  --text:#C4BCAC;
+  --text-2:#9A9488;
+  --text-3:#6E6A62;
+  /* 结构与轴线 */
+  --line:#232B31;
+  --line-strong:#39444B;
+  --axis:#4A463F;
+  /* 光 —— 极小面积 */
+  --accent:#C8963E;
+  --accent-press:#A9762E;
+  --accent-soft:#241E14;
+  --on-accent:#14100A;
+  --rose:#B5767A;
+  --danger:#B5767A;
+  /* 浮层与细节 */
+  --mask:rgba(4,7,9,.66);
+  --chip-bg:#1E262C;
+  --chip-fg:#C4BCAC;
+  --frame-shadow:0 28px 80px rgba(0,0,0,.55);
+  --img-filter:brightness(.93) saturate(.96);
+  --focus-line:#3A3324;
+  --badge-bg:#241E14;
+  --badge-fg:#C9A871;
+  --badge-fg2:#D9B87C;
+  --badge-line:#3B2E1A;
+  --bg-fade:rgba(16,21,25,0);
+  --shadow:none;
+}
+
+/* ============ 主题令牌 · 日间（旧纸米） ============ */
+html[data-theme="light"]{
+  color-scheme:light;
+  --bg:#EDE7DB;
+  --bg-soft:#E6E0D2;
+  --card:#F4EFE4;
+  --raised:#E2DBCB;
+  --drawer:#E9E3D6;
+  --panel:#F0EBDF;
+  --text:#3A342B;
+  --text-2:#6B6154;
+  --text-3:#837A6B;
+  --line:#DCD3C1;
+  --line-strong:#C9BEA9;
+  --axis:#B9AE99;
+  --accent:#9C5228;
+  --accent-press:#7E3F1D;
+  --accent-soft:#F0E3D3;
+  --on-accent:#FBF6EC;
+  --rose:#A84A3C;
+  --danger:#A84A3C;
+  --mask:rgba(58,47,36,.32);
+  --chip-bg:#4A4439;
+  --chip-fg:#F2EDE3;
+  --frame-shadow:0 18px 52px rgba(92,72,48,.15);
+  --img-filter:brightness(1.01) saturate(1.02);
+  --focus-line:#C9A98A;
+  --badge-bg:#F0E3D3;
+  --badge-fg:#8B4E28;
+  --badge-fg2:#7E3F1D;
+  --badge-line:#E0CDB6;
+  --bg-fade:rgba(237,231,219,0);
+  --shadow:none;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{
+  background:var(--bg-soft);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  overscroll-behavior:none;
+  -webkit-font-smoothing:antialiased;
+}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+input,textarea{font-family:inherit}
+#root{height:100%;width:100%}
+@media (min-width:600px){
+  #root{display:flex;align-items:center;justify-content:center}
+}
+.icon{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;display:block;flex:none}
+.sprite{position:absolute;width:0;height:0;overflow:hidden}
+
+.app{
+  position:relative;height:var(--app-h,100dvh);max-width:560px;margin:0 auto;
+  overflow:hidden;background:var(--bg);
+}
+@media (min-width:600px){
+  .app{height:min(880px,calc(100dvh - 40px));border-radius:18px;border:1px solid var(--line);
+       box-shadow:var(--frame-shadow)}
+}
+.screen{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  background:var(--bg);will-change:transform;
+}
+#home{transform:translateX(0);z-index:2}
+#folders{transform:translateX(100%);z-index:3}
+body.show-folders #home{transform:translateX(-22%)}
+body.show-folders #folders{transform:translateX(0)}
+.animating #home,.animating #folders{transition:transform .34s cubic-bezier(.32,.72,.28,1)}
+
+/* ---------- 抽屉（历史对话导航） ---------- */
+.drawer-mask{
+  position:absolute;inset:0;z-index:40;background:var(--mask);
+  opacity:0;pointer-events:none;transition:opacity .28s;
+}
+.drawer{
+  position:absolute;top:0;bottom:0;left:0;z-index:41;
+  width:min(304px,85%);display:flex;flex-direction:column;
+  background:var(--drawer);border-right:1px solid var(--line);
+  transform:translate3d(-102%,0,0);
+  transition:transform .33s cubic-bezier(.32,.72,.28,1);
+  padding-top:env(safe-area-inset-top);
+}
+body.show-drawer .drawer{transform:translate3d(0,0,0)}
+body.show-drawer .drawer-mask{opacity:1;pointer-events:auto}
+.dr-top{padding:12px 12px 4px}
+.dr-new{
+  display:flex;align-items:center;gap:9px;width:100%;height:44px;padding:0 14px;border-radius:11px;
+  background:var(--badge-bg);border:1px solid var(--badge-line);color:var(--badge-fg2);
+  font-size:14.5px;font-weight:500;transition:border-color .18s;
+}
+.dr-new:active{border-color:var(--accent)}
+.dr-new .icon{width:17px;height:17px}
+.dr-search{
+  display:flex;align-items:center;gap:8px;margin:8px 12px 0;height:38px;padding:0 12px;
+  border-radius:10px;background:var(--bg-soft);color:var(--text-3);font-size:13.5px;
+}
+.dr-search .icon{width:15px;height:15px}
+.dr-list{flex:1;overflow-y:auto;padding:6px 8px 8px;overscroll-behavior:contain;scrollbar-width:none}
+.dr-list::-webkit-scrollbar{display:none}
+.dr-sec{font-size:11px;color:var(--text-3);letter-spacing:.07em;padding:15px 9px 5px}
+.dr-item{display:flex;align-items:center;gap:6px;padding:9px 6px 9px 11px;border-radius:9px}
+.dr-item:active{background:var(--raised)}
+.dr-item.cur{background:var(--raised)}
+.dr-item .dr-t{
+  flex:1;min-width:0;font-size:14px;line-height:1.45;color:var(--text-2);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.dr-item.cur .dr-t{color:var(--accent)}
+.dr-item .dr-h{flex:none;font-size:10.5px;color:var(--text-3);font-variant-numeric:tabular-nums}
+.dr-item .dr-m{
+  flex:none;width:26px;height:26px;border-radius:7px;display:flex;
+  align-items:center;justify-content:center;color:var(--text-3);opacity:.55;
+}
+.dr-item .dr-m:active{background:var(--line);opacity:1}
+.dr-item .dr-m .icon{width:15px;height:15px}
+.dr-empty{font-size:12.5px;color:var(--text-3);padding:26px 12px;text-align:center;line-height:1.8}
+.dr-foot{flex:none;border-top:1px solid var(--line);padding:6px 8px calc(10px + env(safe-area-inset-bottom))}
+.dr-row{
+  display:flex;align-items:center;gap:10px;width:100%;padding:11px 10px;
+  border-radius:9px;font-size:14px;color:var(--text-2);text-align:left;
+}
+.dr-row:active{background:var(--raised)}
+.dr-row .icon{width:17px;height:17px;color:var(--text-3)}
+.dr-row .cnt{margin-left:auto;font-size:11.5px;color:var(--text-3)}
+
+/* ---------- 临时模式提示条 ---------- */
+.membar{
+  flex:none;display:flex;gap:8px;align-items:flex-start;
+  padding:calc(env(safe-area-inset-top) + 9px) 12px 9px;
+  background:var(--badge-bg);color:var(--badge-fg);
+  border-bottom:1px solid var(--badge-line);
+  font-size:12px;line-height:1.5;
+}
+.membar b{font-weight:500;color:var(--badge-fg2)}
+.membar .mclose{
+  flex:none;margin-left:auto;width:20px;height:20px;display:flex;
+  align-items:center;justify-content:center;color:var(--badge-fg);opacity:.7;cursor:pointer;
+}
+#home.has-membar .topbar{padding-top:8px}
+
+/* ---------- topbar ---------- */
+.topbar{
+  flex:none;display:flex;align-items:center;gap:4px;
+  padding:calc(env(safe-area-inset-top) + 8px) 8px 8px;
+  background:var(--bg);position:relative;z-index:12;
+}
+.tb-btn{
+  display:flex;align-items:center;gap:3px;height:34px;padding:0 9px;border-radius:10px;
+  font-size:13.5px;color:var(--text-2);white-space:nowrap;
+}
+.tb-btn:active{background:var(--raised)}
+.tb-btn .icon{width:18px;height:18px}
+.tb-btn.on{color:var(--accent)}
+.tb-title{
+  flex:1;min-width:0;text-align:center;font-size:14.5px;font-weight:500;
+  letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  padding:0 2px;color:var(--text);
+}
+.tb-badge{
+  font-size:10px;font-weight:500;color:var(--text-3);border:1px solid var(--line);
+  padding:1px 5px;border-radius:5px;margin-left:5px;vertical-align:1px;
+}
+
+/* ---------- scroll list ---------- */
+.scroll{
+  flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;touch-action:pan-y;
+  padding-bottom:110px;scrollbar-width:none;
+}
+.scroll::-webkit-scrollbar{display:none}
+
+/* ---------- timeline ---------- */
+.day-sep{
+  position:sticky;top:0;z-index:6;display:flex;justify-content:center;
+  padding:14px 0 9px;pointer-events:none;
+}
+.day-sep span{
+  font-size:11px;color:var(--text-3);background:var(--bg);
+  padding:3px 11px;border-radius:20px;letter-spacing:.06em;
+}
+.msg{
+  display:grid;grid-template-columns:34px 13px 1fr;column-gap:8px;
+  padding:0 18px 0 12px;
+}
+.msg .t{
+  font-size:10px;line-height:1;color:var(--text-3);text-align:right;padding-top:11px;
+  font-variant-numeric:tabular-nums;white-space:nowrap;letter-spacing:-.02em;
+}
+.msg .axis{position:relative}
+.msg .axis::before{
+  content:'';position:absolute;left:50%;top:0;bottom:0;width:1px;
+  background:var(--line);transform:translateX(-50%);
+}
+.msg.first .axis::before{top:13px}
+.msg.last .axis::before{bottom:auto;height:13px}
+.msg .axis i{
+  position:absolute;left:50%;top:13px;width:5px;height:5px;border-radius:50%;
+  background:var(--axis);transform:translate(-50%,-50%);
+  transition:background .2s;
+}
+.msg.has-time .axis i{
+  width:7px;height:7px;background:var(--accent);
+  box-shadow:0 0 0 4px var(--bg);
+}
+.msg .body{min-width:0;padding:2px 0 16px}
+.txt{
+  font-size:15.5px;line-height:1.82;letter-spacing:.004em;
+  white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;
+  color:var(--text);
+}
+.imgs{display:grid;gap:6px;margin-top:6px;max-width:330px}
+.imgs.one{grid-template-columns:1fr}
+.imgs.many{grid-template-columns:1fr 1fr}
+.imgs img{
+  width:100%;height:auto;display:block;border-radius:10px;background:var(--bg-soft);
+  cursor:zoom-in;filter:var(--img-filter);
+  border:1px solid var(--line);
+}
+.imgs.one img{width:auto;max-width:100%;max-height:420px;object-fit:contain}
+.imgs.many img{width:100%;aspect-ratio:1/1;object-fit:cover}
+
+.empty{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  height:100%;min-height:340px;gap:10px;color:var(--text-3);padding:0 40px;
+}
+.empty .dot{
+  width:34px;height:34px;border-radius:50%;background:var(--accent-soft);
+  display:flex;align-items:center;justify-content:center;margin-bottom:4px;
+}
+.empty .dot i{width:9px;height:9px;border-radius:50%;background:var(--accent);opacity:.75}
+.empty b{font-size:14.5px;font-weight:500;color:var(--text-2)}
+.empty p{margin:0;font-size:12.5px;line-height:1.7;text-align:center}
+
+/* ---------- composer ---------- */
+.composer{
+  position:absolute;left:0;right:0;bottom:0;z-index:8;
+  padding:10px 12px calc(10px + env(safe-area-inset-bottom));
+  background:linear-gradient(to top,var(--bg) 58%,var(--bg-fade));
+}
+.pending{display:flex;gap:7px;padding:0 3px 9px;overflow-x:auto;scrollbar-width:none}
+.pending::-webkit-scrollbar{display:none}
+.pending:empty{display:none}
+.pending .pi{position:relative;flex:none}
+.pending .pi img{width:56px;height:56px;object-fit:cover;border-radius:9px;display:block;border:1px solid var(--line)}
+.pending .pi b{
+  position:absolute;top:-5px;right:-5px;width:18px;height:18px;border-radius:50%;
+  background:var(--chip-bg);color:var(--chip-fg);font-size:12px;font-weight:400;
+  display:flex;align-items:center;justify-content:center;line-height:1;
+}
+.composer-inner{
+  display:flex;align-items:flex-end;gap:2px;
+  background:var(--card);border:1px solid var(--line);border-radius:22px;
+  padding:4px 4px 4px 15px;
+  transition:border-color .2s;
+}
+.composer-inner:focus-within{border-color:var(--focus-line)}
+.composer textarea{
+  flex:1;min-width:0;border:0;background:transparent;resize:none;outline:none;
+  font-size:15.5px;line-height:1.6;max-height:116px;padding:8px 0;
+  color:var(--text);display:block;caret-color:var(--accent);
+}
+.composer textarea::placeholder{color:var(--text-3)}
+.c-btn{
+  flex:none;width:36px;height:36px;border-radius:50%;display:flex;
+  align-items:center;justify-content:center;color:var(--text-3);
+  transition:background .18s,color .18s,transform .18s;
+}
+.c-btn:active{transform:scale(.92)}
+.c-send{background:transparent;color:var(--text-3)}
+.c-send.on{background:var(--accent);color:var(--on-accent)}
+.c-send:active{background:var(--accent-press)}
+
+/* ---------- folder screen ---------- */
+.folder-list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:2px 12px 120px;overscroll-behavior:contain;scrollbar-width:none}
+.folder-list::-webkit-scrollbar{display:none}
+.frow{
+  display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:12px;
+  transition:background .15s;
+}
+.frow:active{background:var(--raised)}
+.frow .fico{
+  flex:none;width:34px;height:34px;border-radius:9px;background:var(--raised);
+  display:flex;align-items:center;justify-content:center;color:var(--text-2);
+}
+.frow .fico .icon{width:18px;height:18px}
+.frow.main .fico{background:var(--accent-soft);color:var(--accent)}
+.frow .fmain{flex:1;min-width:0;display:flex;flex-direction:column}
+.frow .fname{font-size:15px;font-weight:500;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
+.frow .fsub{font-size:11.5px;color:var(--text-3);margin-top:2px}
+.frow .fmore{
+  flex:none;width:30px;height:30px;border-radius:8px;display:flex;align-items:center;
+  justify-content:center;color:var(--text-3);opacity:.7;
+}
+.frow .fmore:active{background:var(--line);opacity:1}
+
+/* thread rows (timeline style) */
+.trow{display:grid;grid-template-columns:38px 13px 1fr;column-gap:8px;padding:0 12px 0 8px}
+.trow .tt{font-size:10px;line-height:1;color:var(--text-3);text-align:right;padding-top:17px;font-variant-numeric:tabular-nums}
+.trow .taxis{position:relative}
+.trow .taxis::before{content:'';position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--line);transform:translateX(-50%)}
+.trow.first .taxis::before{top:18px}
+.trow.last .taxis::before{bottom:auto;height:18px}
+.trow .taxis i{position:absolute;left:50%;top:18px;width:6px;height:6px;border-radius:50%;background:var(--axis);transform:translate(-50%,-50%)}
+.trow.first .taxis i{width:7px;height:7px;background:var(--accent);box-shadow:0 0 0 4px var(--bg)}
+.trow .tbody{padding:10px 10px 16px 2px;min-width:0}
+.trow .ttitle{font-size:14.5px;font-weight:500;line-height:1.45;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
+.trow .tprev{font-size:12.5px;color:var(--text-3);line-height:1.55;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trow.cur .ttitle{color:var(--accent)}
+.trow:active .tbody{background:var(--raised);border-radius:8px}
+
+.sec-title{font-size:11px;color:var(--text-3);letter-spacing:.06em;padding:20px 12px 6px;text-transform:uppercase}
+.sblock{margin-top:26px;border-top:1px solid var(--line);padding-top:4px}
+.srow{display:flex;align-items:center;justify-content:space-between;width:100%;padding:14px 12px;font-size:14.5px;border-radius:11px;text-align:left}
+.srow:active{background:var(--raised)}
+.srow .icon{width:17px;height:17px;color:var(--text-3)}
+.srow.danger{color:var(--danger)}
+.srow .sub{font-size:11.5px;color:var(--text-3);margin-top:2px;font-weight:400}
+.srow .left{display:flex;flex-direction:column;min-width:0}
+.hint{font-size:11.5px;color:var(--text-3);line-height:1.75;padding:10px 12px 0}
+
+/* ---------- 分类 / 时间轴 切换 ---------- */
+.seg{
+  flex:none;display:flex;gap:2px;margin:2px 12px 8px;padding:3px;
+  background:var(--bg-soft);border-radius:11px;
+}
+.seg button{
+  flex:1;height:32px;border-radius:9px;font-size:13px;color:var(--text-3);
+  transition:background .18s,color .18s;
+}
+.seg button.on{background:var(--card);color:var(--text);font-weight:500}
+
+/* ---------- 全局时间轴 ---------- */
+.ysec{font-size:11px;color:var(--text-3);letter-spacing:.16em;padding:24px 12px 6px}
+.mrow{display:flex;align-items:baseline;gap:10px;padding:14px 12px;border-radius:11px}
+.mrow:active{background:var(--raised)}
+.mrow .mm{font-size:16px;font-weight:500;color:var(--text);font-variant-numeric:tabular-nums;min-width:54px}
+.mrow .mc{flex:none;font-size:11px;color:var(--text-3);font-variant-numeric:tabular-nums}
+.mrow .mp{
+  flex:1;min-width:0;font-size:12.5px;color:var(--text-3);line-height:1.5;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;
+}
+.tagg{
+  display:inline-block;font-size:10.5px;color:var(--text-3);margin-top:7px;
+  padding:2px 7px;border-radius:6px;background:var(--bg-soft);max-width:100%;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.mmsg{cursor:pointer}
+.mmsg:active .body{opacity:.65}
+
+/* ---------- 评论：圆点热区 + 同心圆 ---------- */
+.msg .axis .axb{
+  position:absolute;left:50%;top:13px;width:22px;height:22px;z-index:2;
+  transform:translate(-50%,-50%);border-radius:50%;
+}
+.msg .axis .axb i{top:50%}
+.msg.cmt .axis .axb i{
+  background:var(--accent);
+  box-shadow:0 0 0 2px var(--bg), 0 0 0 3px var(--accent);
+}
+.msg.has-time.cmt .axis .axb i{
+  box-shadow:0 0 0 3.5px var(--bg), 0 0 0 4.5px var(--accent);
+}
+
+/* ---------- 评论页（楼中楼） ---------- */
+.cmt-layer{
+  position:fixed;left:0;right:0;top:0;height:var(--app-h,100dvh);z-index:52;background:var(--bg);
+  display:flex;flex-direction:column;max-width:560px;margin:0 auto;
+  transform:translate3d(100%,0,0);visibility:hidden;
+  transition:transform .3s cubic-bezier(.32,.72,.28,1), visibility 0s .32s;
+}
+.cmt-layer.on{
+  transform:translate3d(0,0,0);visibility:visible;
+  transition:transform .3s cubic-bezier(.32,.72,.28,1), visibility 0s;
+}
+@media (min-width:600px){
+  .cmt-layer{
+    top:50%;height:min(880px,calc(100dvh - 40px));
+    border-radius:18px;border:1px solid var(--line);overflow:hidden;
+    transform:translate3d(100%,-50%,0);
+  }
+  .cmt-layer.on{transform:translate3d(0,-50%,0)}
+}
+.cmt-bar{
+  flex:none;display:flex;align-items:center;gap:4px;
+  padding:calc(env(safe-area-inset-top) + 8px) 8px 8px;background:var(--bg);
+}
+.cmt-bar-t{flex:1;text-align:center;font-size:14.5px;font-weight:500;color:var(--text)}
+.cmt-bar-n{font-size:11px;font-weight:400;color:var(--text-3);margin-left:6px}
+.cmt-scroll{
+  flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+  padding:0 18px 28px;scrollbar-width:none;
+}
+.cmt-scroll::-webkit-scrollbar{display:none}
+.cq{padding:8px 0 17px;border-bottom:1px solid var(--line)}
+.cq-h{display:flex;align-items:baseline;gap:9px;margin-bottom:8px}
+.cq-lab{flex:none;font-size:10.5px;letter-spacing:.08em;color:var(--accent);opacity:.9}
+.cq-t{min-width:0;font-size:10.5px;color:var(--text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cq-x{
+  font-size:14.5px;line-height:1.8;color:var(--text-2);max-height:156px;overflow-y:auto;
+  white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;
+}
+.cq-n{font-size:11.5px;color:var(--text-3);margin-top:8px}
+.cmt-sec{font-size:11px;letter-spacing:.06em;color:var(--text-3);padding:18px 0 4px}
+.cmi{padding:14px 0 15px;border-bottom:1px solid var(--line)}
+.cmi:last-child{border-bottom:0}
+.cmi-h{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.cmi-t{font-size:10.5px;color:var(--text-3);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.cmi-rep{margin-left:auto;font-size:11.5px;color:var(--text-3);padding:3px 5px;border-radius:6px}
+.cmi-rep:active{background:var(--raised);color:var(--accent)}
+.cmi-x{
+  font-size:14.8px;line-height:1.8;color:var(--text);
+  white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;
+}
+.cmi-rs{margin-top:11px;padding-left:11px;border-left:1px solid var(--line-strong)}
+.crep{padding:5px 0 6px}
+.crep-h{font-size:10px;color:var(--text-3);margin-bottom:2px;font-variant-numeric:tabular-nums}
+.crep-x{
+  font-size:13.8px;line-height:1.74;color:var(--text-2);
+  white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;
+}
+.cmt-empty{text-align:center;padding:66px 20px;color:var(--text-3);font-size:12.5px;line-height:1.9}
+.cmt-empty b{display:block;font-size:14px;font-weight:500;color:var(--text-2);margin-bottom:7px}
+.cmt-dock{
+  flex:none;padding:9px 12px calc(10px + env(safe-area-inset-bottom));
+  border-top:1px solid var(--line);background:var(--bg);
+}
+.cmt-dock[hidden]{display:none}
+.cmt-in{
+  display:flex;align-items:flex-end;gap:2px;background:var(--card);
+  border:1px solid var(--line);border-radius:20px;padding:4px 4px 4px 14px;
+  transition:border-color .2s;
+}
+.cmt-in:focus-within{border-color:var(--focus-line)}
+.cmt-in textarea{
+  flex:1;min-width:0;border:0;background:transparent;resize:none;outline:none;
+  font-size:15px;line-height:1.62;max-height:104px;padding:8px 0;
+  color:var(--text);caret-color:var(--accent);display:block;
+}
+.cmt-in textarea::placeholder{color:var(--text-3)}
+.cmt-rep{
+  display:flex;align-items:center;gap:6px;margin-bottom:8px;padding:5px 7px 5px 10px;
+  font-size:11.5px;color:var(--accent);background:var(--accent-soft);
+  border:1px solid var(--badge-line);border-radius:9px;
+}
+.cmt-rep[hidden]{display:none}
+.cmt-rep span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cmt-rep-x{flex:none;width:18px;height:18px;display:flex;align-items:center;justify-content:center;opacity:.75}
+.cmt-rep-x .icon{width:12px;height:12px}
+
+/* ---------- 抽屉：导出提醒点 ---------- */
+.dotw{width:5px;height:5px;border-radius:50%;background:var(--accent);flex:none;margin-left:7px}
+
+/* ---------- overlay / sheet ---------- */
+.sheet-wrap{position:fixed;inset:0;z-index:60;display:none}
+.sheet-wrap.on{display:block}
+.sheet-mask{position:absolute;inset:0;background:var(--mask);opacity:0;transition:opacity .22s}
+.sheet-wrap.in .sheet-mask{opacity:1}
+.sheet-panel{
+  position:absolute;left:0;right:0;bottom:0;max-width:560px;margin:0 auto;
+  background:var(--panel);border-top:1px solid var(--line);
+  border-radius:18px 18px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));
+  transform:translateY(100%);transition:transform .3s cubic-bezier(.32,.72,.28,1);
+  max-height:86dvh;overflow-y:auto;
+}
+.sheet-wrap.in .sheet-panel{transform:translateY(0)}
+.sheet-h{font-size:12px;color:var(--text-3);letter-spacing:.05em;margin:2px 0 8px}
+.sheet-h+.sheet-h{margin-top:18px}
+.field{display:block;margin-bottom:4px}
+.field input{
+  width:100%;border:1px solid var(--line);background:var(--card);color:var(--text);
+  border-radius:12px;padding:12px 14px;font-size:15px;outline:none;
+}
+.field input:focus{border-color:var(--line-strong)}
+.picks{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 6px}
+.pick{
+  font-size:13.5px;padding:8px 14px;border-radius:20px;border:1px solid var(--line);
+  background:var(--card);color:var(--text-2);
+}
+.pick.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:500}
+.sheet-actions{display:flex;gap:9px;margin-top:20px}
+.sheet-actions.col{flex-direction:column;gap:8px;margin-top:8px}
+.sheet-actions.col .btn{flex:none}
+.sheet-actions .btn{
+  flex:1;height:46px;border-radius:13px;font-size:15px;font-weight:500;
+  display:flex;align-items:center;justify-content:center;
+}
+.btn-primary{background:var(--accent);color:var(--on-accent);font-weight:500}
+.btn-primary:active{background:var(--accent-press)}
+.btn-ghost{background:var(--raised);color:var(--text-2)}
+.btn-danger{background:var(--raised);color:var(--rose)}
+.sheet-actions .btn.wide{flex:1}
+
+/* search */
+.search-layer{
+  position:fixed;inset:0;z-index:70;background:var(--bg);display:none;
+  flex-direction:column;max-width:560px;margin:0 auto;
+}
+.search-layer.on{display:flex}
+.search-bar{
+  display:flex;align-items:center;gap:8px;flex:none;
+  padding:calc(env(safe-area-inset-top) + 10px) 12px 10px;
+}
+.search-bar .sbox{
+  flex:1;display:flex;align-items:center;gap:8px;background:var(--bg-soft);
+  border-radius:11px;padding:0 11px;height:38px;
+}
+.search-bar .sbox .icon{width:16px;height:16px;color:var(--text-3)}
+.search-bar input{
+  flex:1;border:0;background:transparent;outline:none;font-size:15px;color:var(--text);
+}
+.search-bar input::-webkit-search-cancel-button,
+.search-bar input::-webkit-search-decoration{-webkit-appearance:none;display:none}
+.search-bar .cancel{font-size:14.5px;color:var(--text-2);padding:6px 2px;white-space:nowrap}
+.search-res{flex:1;overflow-y:auto;padding:4px 12px 40px;overscroll-behavior:contain}
+.res{display:block;width:100%;text-align:left;padding:12px 12px;border-radius:12px;margin-bottom:2px}
+.res:active{background:var(--bg-soft)}
+.res .rt{display:flex;justify-content:space-between;gap:10px;font-size:11.5px;color:var(--text-3);margin-bottom:4px}
+.res .rt span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.res .rx{font-size:14px;line-height:1.6;color:var(--text-2);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.res mark{background:var(--accent-soft);color:var(--accent);padding:0 1px;border-radius:3px}
+.res-empty{text-align:center;color:var(--text-3);font-size:13px;padding:60px 20px;line-height:1.8}
+
+/* toast */
+.toast{
+  position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translate(-50%,10px);
+  background:var(--chip-bg);color:var(--chip-fg);font-size:13px;padding:9px 16px;border-radius:18px;
+  border:1px solid var(--line);
+  z-index:90;opacity:0;pointer-events:none;transition:opacity .22s,transform .22s;
+  max-width:80vw;text-align:center;line-height:1.5;
+}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+/* image viewer */
+.viewer{
+  position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.94);display:none;
+  align-items:center;justify-content:center;
+}
+.viewer.on{display:flex}
+.viewer img{max-width:100%;max-height:100%;object-fit:contain}
+
+.fatal{
+  padding:40px 24px;font-size:14px;line-height:1.8;color:var(--text-2);
+}
+.fatal b{display:block;color:var(--text);font-size:16px;margin-bottom:10px}
+.fatal code{background:var(--raised);padding:2px 6px;border-radius:5px;font-size:12.5px}
+
+.flash{animation:flash 1.6s ease}
+@keyframes flash{
+  0%,40%{background:var(--accent-soft)}
+  100%{background:transparent}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<template id="app-shell">
+  <svg class="sprite" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5.5v13M5.5 12h13"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.4"/><path d="M15.8 15.8L20 20"/></symbol>
+    <symbol id="i-img" viewBox="0 0 24 24"><rect x="3.4" y="4.6" width="17.2" height="14.8" rx="3.2"/><circle cx="8.6" cy="9.6" r="1.5"/><path d="M4 17.2l4.6-4.6 3.4 3.4 3-3 4.9 4.9"/></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24"><path d="M12 19V5.4M6.2 11.2L12 5.4l5.8 5.8"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="M14.8 5.2L8 12l6.8 6.8"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><g fill="currentColor" stroke="none"><circle cx="5.2" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="18.8" cy="12" r="1.5"/></g></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3.6 7.4a2 2 0 0 1 2-2h3.2l2 2.2h7.6a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5.6a2 2 0 0 1-2-2z"/></symbol>
+    <symbol id="i-inbox" viewBox="0 0 24 24"><path d="M3.6 13.4h3.9l1.5 2.6h6l1.5-2.6h3.9"/><path d="M3.6 13.4l2.3-6.9a2 2 0 0 1 1.9-1.4h8.4a2 2 0 0 1 1.9 1.4l2.3 6.9v3.6a2 2 0 0 1-2 2H5.6a2 2 0 0 1-2-2z"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M6.4 6.4l11.2 11.2M17.6 6.4L6.4 17.6"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4.2v10.6M7.6 10.4L12 14.8l4.4-4.4M4.6 19.4h14.8"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V4.4M7.6 8.8L12 4.4l4.4 4.4M4.6 19.4h14.8"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4.6 6.9h14.8M9.6 6.9V5.3a1.1 1.1 0 0 1 1.1-1.1h2.6a1.1 1.1 0 0 1 1.1 1.1v1.6M6.6 6.9l.8 11.9a1.6 1.6 0 0 0 1.6 1.5h6a1.6 1.6 0 0 0 1.6-1.5l.8-11.9"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4.2 7.4h15.6M4.2 12h15.6M4.2 16.6h10.4"/></symbol>
+    <symbol id="i-sort-down" viewBox="0 0 24 24"><path d="M6.5 4.6v14.2M3.4 15.6l3.1 3.2 3.1-3.2M13.4 6.4h7.2M13.4 11h5.2M13.4 15.6h3.2"/></symbol>
+    <symbol id="i-sort-up" viewBox="0 0 24 24"><path d="M6.5 19.4V5.2M3.4 8.4l3.1-3.2 3.1 3.2M13.4 6.4h3.2M13.4 11h5.2M13.4 15.6h7.2"/></symbol>
+    <symbol id="i-data" viewBox="0 0 24 24"><ellipse cx="12" cy="6.6" rx="7.4" ry="2.8"/><path d="M4.6 6.6v10.8c0 1.5 3.3 2.8 7.4 2.8s7.4-1.3 7.4-2.8V6.6"/><path d="M4.6 12c0 1.5 3.3 2.8 7.4 2.8s7.4-1.3 7.4-2.8"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.2 13.6A7.7 7.7 0 0 1 10.4 3.9 7 7 0 1 0 20.2 13.6z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 3.4v1.8M12 18.8v1.8M3.4 12h1.8M18.8 12h1.8M6 6l1.3 1.3M16.7 16.7L18 18M18 6l-1.3 1.3M7.3 16.7L6 18"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.3"/><path d="M12 7.4V12l3.1 1.9"/></symbol>
+    <symbol id="i-comment" viewBox="0 0 24 24"><path d="M20 11.8c0 4-3.6 7.2-8 7.2a8.6 8.6 0 0 1-2.4-.34L5 20l1.1-3.1A6.9 6.9 0 0 1 4 11.8C4 7.9 7.6 4.6 12 4.6s8 3.3 8 7.2z"/></symbol>
+  </svg>
+
+  <div class="app" id="app">
+    <!-- ============ 抽屉 ============ -->
+    <div class="drawer-mask" id="drawer-mask"></div>
+    <aside class="drawer" id="drawer">
+      <div class="dr-top">
+        <button class="dr-new" id="dr-new"><svg class="icon"><use href="#i-plus"/></svg><span>新建对话</span></button>
+      </div>
+      <button class="dr-search" id="dr-search"><svg class="icon"><use href="#i-search"/></svg><span>搜索全部内容</span></button>
+      <div class="dr-list" id="dr-list"></div>
+      <div class="dr-foot">
+        <button class="dr-row" id="dr-folders"><svg class="icon"><use href="#i-folder"/></svg><span>分类</span><span class="cnt" id="dr-fcnt"></span></button>
+        <button class="dr-row" id="dr-data"><svg class="icon"><use href="#i-data"/></svg><span>数据</span><span class="cnt" id="dr-dcnt"></span></button>
+        <button class="dr-row" id="dr-theme"><svg class="icon"><use href="#i-moon"/></svg><span>外观</span><span class="cnt" id="dr-theme-cnt">夜间</span></button>
+      </div>
+    </aside>
+
+    <!-- ============ HOME ============ -->
+    <section class="screen" id="home">
+      <header class="topbar">
+        <button class="tb-btn" id="btn-drawer" title="对话列表"><svg class="icon"><use href="#i-menu"/></svg></button>
+        <div class="tb-title" id="thread-title">碎碎念</div>
+        <button class="tb-btn" id="btn-openfolders" title="分类"><svg class="icon"><use href="#i-folder"/></svg></button>
+      </header>
+      <div class="scroll" id="msg-list"></div>
+      <div class="composer" id="composer">
+        <div class="pending" id="pending"></div>
+        <div class="composer-inner">
+          <textarea id="input" rows="1" placeholder="写点什么…"></textarea>
+          <button class="c-btn" id="btn-pick" title="添加图片"><svg class="icon"><use href="#i-img"/></svg></button>
+          <button class="c-btn c-send" id="btn-send"><svg class="icon"><use href="#i-send"/></svg></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FOLDERS ============ -->
+    <section class="screen" id="folders">
+      <header class="topbar">
+        <button class="tb-btn" id="btn-back"><svg class="icon"><use href="#i-back"/></svg></button>
+        <div class="tb-title" id="folder-title">分类</div>
+        <button class="tb-btn" id="btn-sort" title="切换顺序" style="display:none"><svg class="icon"><use href="#i-sort-down"/></svg></button>
+        <button class="tb-btn" id="btn-newfolder"><svg class="icon"><use href="#i-plus"/></svg>文件夹</button>
+      </header>
+      <div class="seg" id="seg">
+        <button data-seg="folders" class="on">文件夹</button>
+        <button data-seg="time">时间轴</button>
+      </div>
+      <div class="folder-list" id="folder-list"></div>
+    </section>
+  </div>
+
+  <!-- search -->
+  <div class="search-layer" id="search-layer">
+    <div class="search-bar">
+      <div class="sbox">
+        <svg class="icon"><use href="#i-search"/></svg>
+        <input id="search-input" type="search" placeholder="搜索所有内容" autocomplete="off">
+      </div>
+      <button class="cancel" id="search-cancel">取消</button>
+    </div>
+    <div class="search-res" id="search-res"></div>
+  </div>
+
+  <div class="sheet-wrap" id="sheet"></div>
+
+  <!-- 评论页 -->
+  <div class="cmt-layer" id="cmt-layer">
+    <header class="cmt-bar">
+      <button class="tb-btn" id="cmt-back" title="返回"><svg class="icon"><use href="#i-back"/></svg></button>
+      <div class="cmt-bar-t">评论<span class="cmt-bar-n" id="cmt-bar-n"></span></div>
+      <span style="width:34px;flex:none"></span>
+    </header>
+    <div class="cmt-scroll" id="cmt-scroll"></div>
+    <div class="cmt-dock" id="cmt-dock">
+      <div class="cmt-rep" id="cmt-rep" hidden>
+        <span id="cmt-rep-t"></span>
+        <button class="cmt-rep-x" id="cmt-rep-x" aria-label="取消回复"><svg class="icon"><use href="#i-x"/></svg></button>
+      </div>
+      <div class="cmt-in">
+        <textarea id="cmt-input" rows="1" placeholder="想对这句话说什么…"></textarea>
+        <button class="c-btn c-send" id="cmt-send"><svg class="icon"><use href="#i-send"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="viewer" id="viewer"><img id="viewer-img" alt=""></div>
+  <div class="toast" id="toast"></div>
+
+  <input type="file" id="file-input" accept=".html,text/html" hidden>
+  <input type="file" id="img-input" accept="image/*" multiple hidden>
+</template>
+
+<script id="archive-data" type="application/json"></script>
+
+<script id="app-js">
+(function () {
+'use strict';
+
+/* =========================================================
+   0. 工具
+   ========================================================= */
+var $ = function (s, r) { return (r || document).querySelector(s); };
+var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+
+function uid() {
+  try { if (window.crypto && crypto.randomUUID) return crypto.randomUUID(); } catch (e) {}
+  return 'x' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+}
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+function fmtTime(ts) {
+  var d = new Date(ts);
+  return pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+}
+function fmtShortDate(ts) {
+  var d = new Date(ts), n = new Date();
+  if (d.getFullYear() === n.getFullYear()) return (d.getMonth() + 1) + '-' + pad2(d.getDate());
+  return (d.getFullYear() + '').slice(2) + '-' + (d.getMonth() + 1) + '-' + pad2(d.getDate());
+}
+function dayKey(ts) {
+  var d = new Date(ts);
+  return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+}
+function dayLabel(ts) {
+  var d = new Date(ts), now = new Date();
+  if (dayKey(ts) === dayKey(now.getTime())) return '今天';
+  var y = new Date(now.getTime() - 86400000);
+  if (dayKey(ts) === dayKey(y.getTime())) return '昨天';
+  var wd = '日一二三四五六'[d.getDay()];
+  if (d.getFullYear() === now.getFullYear()) return (d.getMonth() + 1) + '月' + d.getDate() + '日 周' + wd;
+  return d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日';
+}
+function stampName() {
+  var d = new Date();
+  return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+}
+function toast(msg, ms) {
+  var el = $('#toast');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add('on');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(function () { el.classList.remove('on'); }, ms || 2200);
+}
+
+/* =========================================================
+   1. 存储层
+   ========================================================= */
+var DB_NAME = 'suisuinian', DB_VER = 1, _db = null;
+
+/* 当环境不允许 IndexedDB 时（file:// 打开、预览窗沙箱 iframe、隐私模式），
+   退化为纯内存存储：功能全部可用，但关闭页面后数据丢失。 */
+var MEM_MODE = false;
+var MEM = { folders: {}, threads: {}, messages: {} };
+var STORE_ERR = null;
+
+function memArr(store) {
+  var o = MEM[store] || (MEM[store] = {});
+  return Object.keys(o).map(function (k) { return o[k]; });
+}
+function memByIndex(store, index, key) {
+  return memArr(store).filter(function (v) { return v[index] === key; });
+}
+function enterMemoryMode(err) {
+  if (MEM_MODE) return;
+  MEM_MODE = true;
+  STORE_ERR = err;
+  _db = null;
+}
+
+function openDB() {
+  if (_db) return Promise.resolve(_db);
+  return new Promise(function (resolve, reject) {
+    var idb = null;
+    try { idb = window.indexedDB; } catch (e0) { enterMemoryMode(e0); return reject(e0); }
+    if (!idb) { enterMemoryMode(new Error('浏览器不提供本地数据库')); return reject(STORE_ERR); }
+    var req;
+    try { req = idb.open(DB_NAME, DB_VER); }
+    catch (e) { enterMemoryMode(e); return reject(e); }
+    req.onupgradeneeded = function (e) {
+      var d = e.target.result;
+      if (!d.objectStoreNames.contains('folders')) d.createObjectStore('folders', { keyPath: 'id' });
+      if (!d.objectStoreNames.contains('threads')) {
+        var s = d.createObjectStore('threads', { keyPath: 'id' });
+        s.createIndex('folderId', 'folderId', { unique: false });
+      }
+      if (!d.objectStoreNames.contains('messages')) {
+        var m = d.createObjectStore('messages', { keyPath: 'id' });
+        m.createIndex('threadId', 'threadId', { unique: false });
+      }
+    };
+    req.onsuccess = function () { clearTimeout(timer); _db = req.result; resolve(_db); };
+    req.onerror = function () {
+      clearTimeout(timer);
+      var e = req.error || new Error('无法打开数据库');
+      if (/denied|security|not allowed|InvalidState/i.test(String(e.name || '') + ' ' + String(e.message || ''))) enterMemoryMode(e);
+      reject(e);
+    };
+    req.onblocked = function () { clearTimeout(timer); reject(new Error('数据库被其他标签页占用，请关闭后重试')); };
+    var timer = setTimeout(function () {
+      reject(new Error('打开本地数据库超时，请关闭其他标签页或重新打开'));
+    }, 8000);
+  });
+}
+
+function idbAll(store) {
+  if (MEM_MODE) return Promise.resolve(memArr(store));
+  return openDB().then(function (db) {
+    return new Promise(function (res, rej) {
+      var t = db.transaction(store, 'readonly');
+      var r = t.objectStore(store).getAll();
+      r.onsuccess = function () { res(r.result || []); };
+      r.onerror = function () { rej(r.error); };
+    });
+  });
+}
+function idbByIndex(store, index, key) {
+  if (MEM_MODE) return Promise.resolve(memByIndex(store, index, key));
+  return openDB().then(function (db) {
+    return new Promise(function (res, rej) {
+      var t = db.transaction(store, 'readonly');
+      var r = t.objectStore(store).index(index).getAll(key);
+      r.onsuccess = function () { res(r.result || []); };
+      r.onerror = function () { rej(r.error); };
+    });
+  });
+}
+function idbPut(store, val) {
+  if (MEM_MODE) { (MEM[store] || (MEM[store] = {}))[val.id] = val; return Promise.resolve(); }
+  return openDB().then(function (db) {
+    return new Promise(function (res, rej) {
+      var t = db.transaction(store, 'readwrite');
+      t.objectStore(store).put(val);
+      t.oncomplete = function () { res(); };
+      t.onerror = function () { rej(t.error); };
+    });
+  });
+}
+function idbPutAll(store, vals) {
+  if (!vals || !vals.length) return Promise.resolve();
+  if (MEM_MODE) {
+    var o = MEM[store] || (MEM[store] = {});
+    vals.forEach(function (v) { o[v.id] = v; });
+    return Promise.resolve();
+  }
+  return openDB().then(function (db) {
+    return new Promise(function (res, rej) {
+      var t = db.transaction(store, 'readwrite');
+      var s = t.objectStore(store);
+      vals.forEach(function (v) { s.put(v); });
+      t.oncomplete = function () { res(); };
+      t.onerror = function () { rej(t.error); };
+    });
+  });
+}
+function idbDel(store, key) {
+  if (MEM_MODE) { if (MEM[store]) delete MEM[store][key]; return Promise.resolve(); }
+  return openDB().then(function (db) {
+    return new Promise(function (res, rej) {
+      var t = db.transaction(store, 'readwrite');
+      t.objectStore(store).delete(key);
+      t.oncomplete = function () { res(); };
+      t.onerror = function () { rej(t.error); };
+    });
+  });
+}
+function idbClear(store) {
+  if (MEM_MODE) { MEM[store] = {}; return Promise.resolve(); }
+  return openDB().then(function (db) {
+    return new Promise(function (res, rej) {
+      var t = db.transaction(store, 'readwrite');
+      t.objectStore(store).clear();
+      t.oncomplete = function () { res(); };
+      t.onerror = function () { rej(t.error); };
+    });
+  });
+}
+
+/* =========================================================
+   2. 全局状态
+   ========================================================= */
+var S = {
+  mode: 'app',            // 'app' | 'archive'
+  folders: [],
+  threads: [],
+  currentId: null,
+  messages: [],
+  folderView: null,       // {id,name} 或 null
+  archive: null,
+  pending: [],            // 待发送图片
+  searchIndex: null,
+  sortAsc: readLS('ssn.sort', '') === 'asc',   // 对话列表顺序：false=最新在上
+  tlMode: 'folders',      // 'folders' | 'time'
+  tl: null,               // null=月份列表；{y,m}=该月消息流
+  tlCache: null,
+  monthMsgs: [],          // 时间轴当前月的消息（跨对话），供评论页取用
+  cmtMsg: null,           // 评论页正在看的那条消息 id
+  cmtReply: null,         // 正在回复的评论 id（null = 新评论）
+  stats: (function () {
+    try {
+      var o = JSON.parse(readLS('ssn.stat', '') || '{}');
+      return { img: Number(o.img) || 0, msg: Number(o.msg) || 0, bytes: Number(o.bytes) || 0 };
+    } catch (e) { return { img: 0, msg: 0, bytes: 0 }; }
+  })(),
+  boot_at: Date.now()
+};
+
+var INBOX = 'inbox';
+var GAP = 5 * 60 * 1000;  // 时间轴 5 分钟内合并
+
+/* =========================================================
+   3. 数据操作
+   ========================================================= */
+function readLS(k, d) {
+  try { var v = localStorage.getItem(k); return v == null ? d : v; } catch (e) { return d; }
+}
+function writeLS(k, v) {
+  try { localStorage.setItem(k, v); } catch (e) {}
+}
+
+/* ---------- 外观：夜间 / 日间 ---------- */
+var THEME = (function () {
+  var baked = document.documentElement.getAttribute('data-theme');
+  if (baked === 'light' || baked === 'dark') return baked;   // 归档文件里烧进去的
+  return readLS('ssn.theme', 'dark') === 'light' ? 'light' : 'dark';
+})();
+
+function applyTheme(t, persist) {
+  THEME = (t === 'light') ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', THEME);
+  var m = document.querySelector('meta[name="theme-color"]');
+  if (m) m.setAttribute('content', THEME === 'light' ? '#EDE7DB' : '#101519');
+  var cs = document.querySelector('meta[name="color-scheme"]');
+  if (cs) cs.setAttribute('content', THEME === 'light' ? 'light' : 'dark');
+  var sb = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+  if (sb) sb.setAttribute('content', THEME === 'light' ? 'default' : 'black-translucent');
+  if (persist !== false && !isArchive()) writeLS('ssn.theme', THEME);
+  var cnt = document.getElementById('dr-theme-cnt');
+  if (cnt) cnt.textContent = THEME === 'light' ? '日间' : '夜间';
+  var ico = document.querySelector('#dr-theme use');
+  if (ico) ico.setAttribute('href', THEME === 'light' ? '#i-moon' : '#i-sun');
+}
+applyTheme(THEME, false);
+
+function isArchive() { return S.mode === 'archive'; }
+
+function getFolderName(id) {
+  var f = S.folders.filter(function (x) { return x.id === id; })[0];
+  return f ? f.name : '未分类';
+}
+
+function threadsOf(folderId) {
+  var arr = S.threads.filter(function (t) { return t.folderId === folderId; })
+    .sort(function (a, b) { return a.updatedAt - b.updatedAt; });
+  return S.sortAsc ? arr : arr.reverse();
+}
+
+/* 抽屉用：全部对话，永远最新在上 */
+function allThreadsDesc() {
+  return S.threads.slice().sort(function (a, b) { return b.updatedAt - a.updatedAt; });
+}
+
+function loadMessages(threadId) {
+  if (S.mode === 'archive') {
+    return Promise.resolve((S.archive.messages || [])
+      .filter(function (m) { return m.threadId === threadId; })
+      .sort(function (a, b) { return a.createdAt - b.createdAt; }));
+  }
+  return idbByIndex('messages', 'threadId', threadId).then(function (arr) {
+    return arr.sort(function (a, b) { return a.createdAt - b.createdAt; });
+  });
+}
+
+function allMessages() {
+  if (S.mode === 'archive') return Promise.resolve(S.archive.messages || []);
+  return idbAll('messages');
+}
+
+function saveThread(t) {
+  if (isArchive()) return Promise.resolve();
+  return idbPut('threads', t);
+}
+function saveMessage(m) {
+  if (isArchive()) return Promise.resolve();
+  return idbPut('messages', m);
+}
+function saveFolder(f) {
+  if (isArchive()) return Promise.resolve();
+  return idbPut('folders', f);
+}
+
+function defaultTitle() {
+  var d = new Date();
+  return (d.getMonth() + 1) + '月' + d.getDate() + '日 ' + fmtTime(d.getTime());
+}
+
+function createThread(folderId, title) {
+  var now = Date.now();
+  var t = {
+    id: uid(),
+    title: title || defaultTitle(),
+    folderId: folderId || INBOX,
+    createdAt: now,
+    updatedAt: now
+  };
+  S.threads.push(t);
+  return saveThread(t).then(function () { return t; });
+}
+
+/* =========================================================
+   4. 图片压缩
+   ========================================================= */
+function compressImage(file, maxEdge, quality) {
+  maxEdge = maxEdge || 1600;
+  quality = quality || 0.82;
+  return new Promise(function (resolve, reject) {
+    if (!/^image\//.test(file.type)) return reject(new Error('不是图片'));
+    var url = URL.createObjectURL(file);
+    var img = new Image();
+    img.onload = function () {
+      try {
+        var w = img.naturalWidth || img.width;
+        var h = img.naturalHeight || img.height;
+        var scale = Math.min(1, maxEdge / Math.max(w, h));
+        var cw = Math.max(1, Math.round(w * scale));
+        var ch = Math.max(1, Math.round(h * scale));
+        var cv = document.createElement('canvas');
+        cv.width = cw; cv.height = ch;
+        var ctx = cv.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, cw, ch);
+        ctx.drawImage(img, 0, 0, cw, ch);
+        URL.revokeObjectURL(url);
+        var data = cv.toDataURL('image/jpeg', quality);
+        resolve({ d: data, w: cw, h: ch });
+      } catch (e) { URL.revokeObjectURL(url); reject(e); }
+    };
+    img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('图片读取失败')); };
+    img.src = url;
+  });
+}
+
+/* =========================================================
+   5. 渲染：主页消息时间轴
+   ========================================================= */
+var io = null;
+function getObserver() {
+  if (io) return io;
+  io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (en.isIntersecting) {
+        var el = en.target;
+        var src = el.getAttribute('data-src');
+        if (src) { el.src = src; el.removeAttribute('data-src'); }
+        io.unobserve(el);
+      }
+    });
+  }, { rootMargin: '320px 0px' });
+  return io;
+}
+
+function renderHome(scrollTo) {
+  var list = $('#msg-list');
+  var thread = S.threads.filter(function (t) { return t.id === S.currentId; })[0];
+  var titleEl = $('#thread-title');
+  if (titleEl) titleEl.textContent = thread ? thread.title : '碎碎念';
+  renderDrawer();
+
+  if (!thread) {
+    list.innerHTML = '<div class="empty"><div class="dot"><i></i></div><b>还没有对话</b><p>点左上角，新建一段</p></div>';
+    updateSendBtn();
+    return;
+  }
+
+  var msgs = S.messages;
+  if (!msgs.length) {
+    list.innerHTML = '<div class="empty"><div class="dot"><i></i></div><b>从这一句开始</b><p>写下来，不必分类，<br>以后自然会找到位置。</p></div>';
+    updateSendBtn();
+    return;
+  }
+
+  var html = '';
+  var lastDay = '';
+  var lastTime = 0;
+  var obs = getObserver();
+
+  for (var i = 0; i < msgs.length; i++) {
+    var m = msgs[i];
+    var dk = dayKey(m.createdAt);
+    if (dk !== lastDay) {
+      html += '<div class="day-sep"><span>' + esc(dayLabel(m.createdAt)) + '</span></div>';
+      lastDay = dk;
+      lastTime = 0;
+    }
+    var showTime = (m.createdAt - lastTime) > GAP;
+    if (showTime) lastTime = m.createdAt;
+
+    var cls = 'msg' + (showTime ? ' has-time' : '');
+    if (m.comments && m.comments.length) cls += ' cmt';
+    if (i === 0) cls += ' first';
+    if (i === msgs.length - 1) cls += ' last';
+
+    html += '<div class="' + cls + '" id="m-' + esc(m.id) + '" data-mid="' + esc(m.id) + '">';
+    html += '<div class="t">' + (showTime ? fmtTime(m.createdAt) : '') + '</div>';
+    html += axisHTML(m);
+    html += '<div class="body">';
+    if (m.text) html += '<div class="txt">' + esc(m.text) + '</div>';
+    if (m.images && m.images.length) {
+      html += '<div class="imgs ' + (m.images.length === 1 ? 'one' : 'many') + '">';
+      for (var j = 0; j < m.images.length; j++) {
+        var im = m.images[j];
+        html += '<img data-src="' + esc(im.d) + '"' +
+          (im.w ? ' width="' + im.w + '" height="' + im.h + '"' : '') +
+          ' alt="" loading="lazy">';
+      }
+      html += '</div>';
+    }
+    html += '</div></div>';
+  }
+
+  list.innerHTML = html;
+
+  $$('#msg-list img[data-src]').forEach(function (img) { obs.observe(img); });
+
+  if (scrollTo !== false) {
+    requestAnimationFrame(function () { list.scrollTop = list.scrollHeight; });
+  }
+}
+
+/* ---------- 评论：主页面只留一个同心圆，内容进独立页面 ---------- */
+function cmtDate(ts) { return fmtShortDate(ts) + ' ' + fmtTime(ts); }
+
+function axisHTML(m) {
+  var n = (m.comments || []).length;
+  return '<div class="axis"><button class="axb" data-cmt="' + esc(m.id) + '" aria-label="' +
+    (n ? n + ' 句评论' : '评论') + '"><i></i></button></div>';
+}
+
+function findMsg(id) {
+  return S.messages.filter(function (x) { return x.id === id; })[0];
+}
+/* 时间轴（跨对话）里打开时，消息不一定在当前对话里 */
+function findMsgAnywhere(id) {
+  var m = findMsg(id);
+  if (m) return m;
+  return (S.monthMsgs || []).filter(function (x) { return x.id === id; })[0] || null;
+}
+
+function cmtOf(m, cid) {
+  return (m.comments || []).filter(function (c) { return c.id === cid; })[0] || null;
+}
+
+/* ---------- 评论页：楼中楼 ---------- */
+function openCommentPage(mid) {
+  var m = findMsgAnywhere(mid);
+  if (!m) { toast('这条记录已经不在了'); return; }
+  S.cmtMsg = mid;
+  S.cmtReply = null;
+  var ta = $('#cmt-input');
+  if (ta) { ta.value = ''; ta.style.height = 'auto'; }
+  renderCommentPage();
+  var layer = $('#cmt-layer');
+  layer.classList.add('on');
+  setTimeout(function () {
+    if (S.cmtMsg !== mid) return;
+    var sc = $('#cmt-scroll');
+    if (sc) sc.scrollTop = sc.scrollHeight;
+  }, 320);
+}
+
+function closeCommentPage() {
+  var layer = $('#cmt-layer');
+  if (!layer || !layer.classList.contains('on')) return;
+  layer.classList.remove('on');
+  var ta = $('#cmt-input');
+  if (ta) ta.blur();
+  S.cmtReply = null;
+  var had = S.cmtMsg;
+  S.cmtMsg = null;
+  if (had) { refreshAfterCmt(); }
+}
+
+function refreshAfterCmt() {
+  if (isArchive()) return;
+  if (S.currentId && !S.folderView) renderHome(false);
+  if (document.body.classList.contains('show-folders')) renderFolders();
+}
+
+/* 评论页右滑返回 */
+function bindCmtSwipe() {
+  var layer = $('#cmt-layer');
+  if (!layer) return;
+  var sx = 0, sy = 0, axis = null, active = false, moved = 0;
+  var wide = function () { return window.matchMedia('(min-width:600px)').matches; };
+  var reset = function () {
+    layer.style.transition = '';
+    layer.style.transform = '';
+    moved = 0;
+  };
+  layer.addEventListener('pointerdown', function (e) {
+    if (!layer.classList.contains('on')) return;
+    if (e.button != null && e.button !== 0) return;
+    if (e.target.closest('button,textarea,input,.cmt-dock')) return;
+    sx = e.clientX; sy = e.clientY; axis = null; active = true; moved = 0;
+  }, { passive: true });
+  layer.addEventListener('pointermove', function (e) {
+    if (!active) return;
+    var dx = e.clientX - sx, dy = e.clientY - sy;
+    if (!axis) {
+      if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
+        axis = Math.abs(dx) > Math.abs(dy) * 1.4 ? 'x' : 'y';
+      } else return;
+    }
+    if (axis !== 'x') return;
+    moved = Math.max(0, dx);
+    layer.style.transition = 'none';
+    layer.style.transform = wide()
+      ? 'translate3d(' + moved + 'px,-50%,0)'
+      : 'translate3d(' + moved + 'px,0,0)';
+  }, { passive: true });
+  var end = function () {
+    if (!active) return;
+    active = false;
+    if (axis !== 'x') return;
+    var d = moved;
+    reset();
+    if (d > 72) closeCommentPage();
+  };
+  layer.addEventListener('pointerup', end, { passive: true });
+  layer.addEventListener('pointercancel', function () { active = false; reset(); }, { passive: true });
+}
+
+function cmtItemHTML(c) {
+  var h = '<div class="cmi" data-cid="' + esc(c.id) + '">';
+  h += '<div class="cmi-h"><span class="cmi-t">' + esc(cmtDate(c.createdAt)) + '</span>';
+  if (!isArchive()) {
+    h += '<button class="cmi-rep" data-rep="' + esc(c.id) + '">回复</button>';
+  }
+  h += '</div>';
+  h += '<div class="cmi-x">' + esc(c.text) + '</div>';
+  var rs = c.replies || [];
+  if (rs.length) {
+    h += '<div class="cmi-rs">';
+    rs.forEach(function (r) {
+      h += '<div class="crep" data-cid="' + esc(c.id) + '" data-rid="' + esc(r.id) + '">';
+      h += '<div class="crep-h">' + esc(cmtDate(r.createdAt)) + '</div>';
+      h += '<div class="crep-x">' + esc(r.text) + '</div>';
+      h += '</div>';
+    });
+    h += '</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+function renderCommentPage() {
+  var m = findMsgAnywhere(S.cmtMsg);
+  if (!m) return;
+  var cs = m.comments || [];
+  var th = S.threads.filter(function (t) { return t.id === m.threadId; })[0];
+
+  var nEl = $('#cmt-bar-n');
+  var total = 0;
+  cs.forEach(function (c) { total += 1 + (c.replies || []).length; });
+  if (nEl) nEl.textContent = total ? total + ' 句' : '';
+
+  var h = '<div class="cq">';
+  var tTitle = th ? th.title : '';
+  var dateLike = /^\d{1,2}月\d{1,2}日\s*\d{1,2}:\d{2}$/.test(tTitle);
+  h += '<div class="cq-h"><span class="cq-lab">原句</span>' +
+    '<span class="cq-t">' + esc(cmtDate(m.createdAt) +
+      (!dateLike && tTitle ? ' · ' + tTitle : '')) + '</span></div>';
+  if (m.text) h += '<div class="cq-x">' + esc(m.text) + '</div>';
+  if (m.images && m.images.length) {
+    h += '<div class="cq-n">含 ' + m.images.length + ' 张图片 · 在时间轴上查看</div>';
+  }
+  h += '</div>';
+
+  if (!cs.length) {
+    h += '<div class="cmt-empty"><b>还没有评论</b>' +
+      (isArchive() ? '这条记录下面还没有留下评论。'
+        : '有些话，隔一阵才说得出来。<br>写在这里，只属于这一句。') + '</div>';
+  } else {
+    h += '<div class="cmt-sec">后来的话</div>';
+    cs.forEach(function (c) { h += cmtItemHTML(c); });
+  }
+  $('#cmt-scroll').innerHTML = h;
+
+  var dock = $('#cmt-dock');
+  if (dock) dock.hidden = isArchive();
+  syncCmtDock(m);
+}
+
+function syncCmtDock(m) {
+  if (isArchive()) return;
+  var chip = $('#cmt-rep');
+  var ta = $('#cmt-input');
+  var c = S.cmtReply ? cmtOf(m, S.cmtReply) : null;
+  if (chip) chip.hidden = !c;
+  if (c) {
+    $('#cmt-rep-t').textContent = '回复 ' + cmtDate(c.createdAt);
+    ta.placeholder = '回一句…';
+  } else {
+    ta.placeholder = '想对这句话说什么…';
+  }
+}
+
+function sendCmt() {
+  if (isArchive()) { toast('归档文件是只读的'); return; }
+  var m = findMsgAnywhere(S.cmtMsg);
+  if (!m) return;
+  var ta = $('#cmt-input');
+  var v = ta.value.trim();
+  if (!v) { ta.focus(); return; }
+  var now = Date.now();
+
+  if (S.cmtReply) {
+    var c = cmtOf(m, S.cmtReply);
+    if (!c) { S.cmtReply = null; return sendCmt(); }
+    if (!c.replies) c.replies = [];
+    c.replies.push({ id: uid(), text: v, createdAt: now });
+  } else {
+    if (!m.comments) m.comments = [];
+    m.comments.push({ id: uid(), text: v, createdAt: now, replies: [] });
+  }
+
+  saveMessage(m).then(function () {
+    S.searchIndex = null;
+    S.tlCache = null;
+    ta.value = '';
+    ta.style.height = 'auto';
+    S.cmtReply = null;
+    renderCommentPage();
+    var sc = $('#cmt-scroll');
+    if (sc) sc.scrollTop = sc.scrollHeight;
+    refreshAfterCmt();
+    toast('已记下', 1200);
+  }).catch(function (e) { toast('保存失败：' + (e && e.message ? e.message : e)); });
+}
+
+/* 长按一条评论 / 回复：复制、删除 */
+function openCmtActions(el) {
+  var m = findMsgAnywhere(S.cmtMsg);
+  if (!m || isArchive()) return;
+  var c = cmtOf(m, el.dataset.cid);
+  if (!c) return;
+  var rid = el.dataset.rid || '';
+  var r = rid ? (c.replies || []).filter(function (x) { return x.id === rid; })[0] : null;
+  if (rid && !r) return;
+  var txt = rid ? r.text : c.text;
+
+  showSheet(
+    '<div class="sheet-h">' + (rid ? '这条回复' : '这句评论') + '</div>' +
+    '<div style="font-size:14px;line-height:1.78;color:var(--text-2);max-height:120px;overflow:auto;' +
+    'background:var(--bg-soft);padding:12px;border-radius:11px;white-space:pre-wrap">' + esc(txt) + '</div>' +
+    '<div class="sheet-actions" style="margin-top:14px">' +
+    '<button class="btn btn-ghost" data-act="copy">复制</button>' +
+    '<button class="btn btn-danger" data-act="del">删除</button></div>',
+    function (panel) {
+      panel.addEventListener('click', function (e) {
+        var act = e.target.closest('[data-act]');
+        if (!act) return;
+        if (act.dataset.act === 'copy') {
+          var done = function () { closeSheet(); toast('已复制'); };
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(txt).then(done).catch(function () { closeSheet(); });
+          } else done();
+          return;
+        }
+        if (act.dataset.act === 'del') {
+          closeSheet();
+          setTimeout(function () {
+            confirmSheet(
+              rid ? '删掉这条回复？' : '删掉这句评论？',
+              '只删这里的一句' + (rid ? '回复' : '评论') + '，原来的碎碎念还在。',
+              '删除',
+              function () {
+                var mm = findMsgAnywhere(S.cmtMsg);
+                if (!mm) return;
+                if (rid) {
+                  var cc = cmtOf(mm, el.dataset.cid);
+                  if (cc) cc.replies = (cc.replies || []).filter(function (x) { return x.id !== rid; });
+                } else {
+                  mm.comments = (mm.comments || []).filter(function (x) { return x.id !== el.dataset.cid; });
+                  if (S.cmtReply === el.dataset.cid) S.cmtReply = null;
+                }
+                saveMessage(mm).then(function () {
+                  S.searchIndex = null;
+                  S.tlCache = null;
+                  renderCommentPage();
+                  refreshAfterCmt();
+                  toast('已删除', 1200);
+                }).catch(function (e2) { toast('删除失败：' + (e2 && e2.message ? e2.message : e2)); });
+              }
+            );
+          }, 220);
+        }
+      });
+    }
+  );
+}
+
+/* =========================================================
+   6. 渲染：分类页
+   ========================================================= */
+function renderFolders() {
+  var box = $('#folder-list');
+  var titleEl = $('#folder-title');
+  var nfBtn = $('#btn-newfolder');
+  var sortBtn = $('#btn-sort');
+  var seg = $('#seg');
+
+  if (seg) seg.style.display = (S.folderView || S.tl) ? 'none' : '';
+  syncSeg();
+
+  if (S.tlMode === 'time') { renderTimeline(); return; }
+
+  if (nfBtn) nfBtn.style.display = (isArchive() || S.folderView) ? 'none' : '';
+  if (sortBtn) {
+    sortBtn.style.display = S.folderView ? '' : 'none';
+    var u = sortBtn.querySelector('use');
+    if (u) u.setAttribute('href', S.sortAsc ? '#i-sort-up' : '#i-sort-down');
+    sortBtn.title = S.sortAsc ? '最早在上 · 点击切换' : '最新在上 · 点击切换';
+  }
+
+  if (S.folderView) {
+    titleEl.textContent = S.folderView.name;
+    var ts = threadsOf(S.folderView.id);
+    var html = '';
+    if (!ts.length) {
+      html = '<div class="empty" style="min-height:240px"><b>这里是空的</b><p>打开左上角的对话列表，<br>新建一段或把别的对话移进来。</p></div>';
+    } else {
+      html += '<div class="sec-title">对话 · ' + (S.sortAsc ? '由旧到新' : '由新到旧') + '</div>';
+      ts.forEach(function (t, i) {
+        var cls = 'trow' + (i === 0 ? ' first' : '') + (i === ts.length - 1 ? ' last' : '') +
+          (t.id === S.currentId ? ' cur' : '');
+        html += '<div class="' + cls + '" data-tid="' + esc(t.id) + '">';
+        html += '<div class="tt">' + esc(fmtShortDate(t.updatedAt)) + '</div>';
+        html += '<div class="taxis"><i></i></div>';
+        html += '<div class="tbody"><div class="ttitle">' + esc(t.title) + '</div>' +
+          '<div class="tprev" data-prev="' + esc(t.id) + '">…</div></div>';
+        html += '</div>';
+      });
+    }
+    box.innerHTML = html;
+    fillPreviews(ts);
+  } else {
+    titleEl.textContent = '分类';
+    var folders = S.folders.slice().sort(function (a, b) {
+      if (a.id === INBOX) return -1;
+      if (b.id === INBOX) return 1;
+      return (a.order || 0) - (b.order || 0) || (a.createdAt || 0) - (b.createdAt || 0);
+    });
+
+    var h = '';
+    folders.forEach(function (f) {
+      var n = S.threads.filter(function (t) { return t.folderId === f.id; }).length;
+      var icon = f.id === INBOX ? 'i-inbox' : 'i-folder';
+      h += '<div class="frow' + (f.id === INBOX ? ' main' : '') + '" data-fid="' + esc(f.id) + '">';
+      h += '<span class="fico"><svg class="icon"><use href="#' + icon + '"/></svg></span>';
+      h += '<span class="fmain"><span class="fname">' + esc(f.name) + '</span>' +
+        '<span class="fsub">' + n + ' 个对话</span></span>';
+      if (f.id !== INBOX && !isArchive()) {
+        h += '<span class="fmore" data-more="' + esc(f.id) + '"><svg class="icon"><use href="#i-more"/></svg></span>';
+      }
+      h += '</div>';
+    });
+
+    h += settingsBlock();
+    box.innerHTML = h;
+  }
+}
+
+/* ---------- 全局时间轴 ---------- */
+function syncSeg() {
+  var seg = $('#seg');
+  if (!seg) return;
+  $$('button', seg).forEach(function (b) {
+    b.classList.toggle('on', b.dataset.seg === S.tlMode);
+  });
+}
+
+function threadName(id) {
+  var t = S.threads.filter(function (x) { return x.id === id; })[0];
+  return t ? t.title : '（已删除的对话）';
+}
+
+function loadTimeline() {
+  if (S.tlCache) return Promise.resolve(S.tlCache);
+  return allMessages().then(function (all) {
+    S.tlCache = all.slice().sort(function (a, b) { return a.createdAt - b.createdAt; });
+    return S.tlCache;
+  });
+}
+
+function renderTimeline() {
+  var box = $('#folder-list');
+  var titleEl = $('#folder-title');
+  var nfBtn = $('#btn-newfolder');
+  var sortBtn = $('#btn-sort');
+  var seg = $('#seg');
+  if (nfBtn) nfBtn.style.display = 'none';
+  if (sortBtn) sortBtn.style.display = 'none';
+  if (seg) seg.style.display = S.tl ? 'none' : '';
+
+  var paint = function () {
+    titleEl.textContent = S.tl ? (S.tl.y + ' 年 ' + (S.tl.m + 1) + ' 月') : '时间轴';
+    if (S.tl) paintMonth(box, S.tlCache || [], getObserver());
+    else paintMonths(box, S.tlCache || []);
+  };
+
+  if (S.tlCache) { paint(); return; }
+  box.innerHTML = '<div class="empty" style="min-height:180px"><b>正在梳理…</b></div>';
+  loadTimeline().then(function () {
+    if (S.tlMode !== 'time') return;
+    paint();
+  }).catch(function (e) {
+    box.innerHTML = '<div class="empty"><b>读取失败</b><p>' + esc(e && e.message) + '</p></div>';
+  });
+}
+
+function paintMonths(box, all) {
+  if (!all.length) {
+    box.innerHTML = '<div class="empty" style="min-height:280px"><div class="dot"><i></i></div>' +
+      '<b>还没有内容</b><p>写过之后，这里会按年月<br>排成一条可以回看的河。</p></div>';
+    return;
+  }
+  var map = {};
+  all.forEach(function (m) {
+    var d = new Date(m.createdAt);
+    var k = d.getFullYear() + '-' + d.getMonth();
+    if (!map[k]) map[k] = { y: d.getFullYear(), m: d.getMonth(), n: 0, prev: '' };
+    map[k].n++;
+    if (!map[k].prev && m.text) {
+      map[k].prev = m.text.replace(/\s+/g, ' ').slice(0, 26);
+    }
+  });
+  var keys = Object.keys(map).sort(function (a, b) {
+    var x = map[a], y = map[b];
+    return (y.y - x.y) || (y.m - x.m);
+  });
+  var html = '', lastY = null;
+  keys.forEach(function (k) {
+    var it = map[k];
+    if (it.y !== lastY) { html += '<div class="ysec">' + it.y + '</div>'; lastY = it.y; }
+    html += '<div class="mrow" data-mym="' + k + '">' +
+      '<span class="mm">' + (it.m + 1) + ' 月</span>' +
+      '<span class="mc">' + it.n + ' 条</span>' +
+      '<span class="mp">' + esc(it.prev || '［图片］') + '</span></div>';
+  });
+  box.innerHTML = html;
+}
+
+function paintMonth(box, all, obs) {
+  var y = S.tl.y, mo = S.tl.m;
+  var list = all.filter(function (m) {
+    var d = new Date(m.createdAt);
+    return d.getFullYear() === y && d.getMonth() === mo;
+  });
+  if (!list.length) {
+    S.monthMsgs = [];
+    box.innerHTML = '<div class="empty" style="min-height:200px"><b>这个月是空的</b></div>';
+    return;
+  }
+  S.monthMsgs = list;
+  var html = '', lastDay = '', lastT = 0;
+  list.forEach(function (m, i) {
+    var dk = dayKey(m.createdAt);
+    if (dk !== lastDay) {
+      html += '<div class="day-sep"><span>' + esc(dayLabel(m.createdAt)) + '</span></div>';
+      lastDay = dk; lastT = 0;
+    }
+    var showTime = (m.createdAt - lastT) > GAP;
+    if (showTime) lastT = m.createdAt;
+
+    var cls = 'msg mmsg' + (showTime ? ' has-time' : '');
+    if (m.comments && m.comments.length) cls += ' cmt';
+    if (i === 0) cls += ' first';
+    if (i === list.length - 1) cls += ' last';
+
+    html += '<div class="' + cls + '" data-jt="' + esc(m.threadId) + '" data-mid="' + esc(m.id) + '">';
+    html += '<div class="t">' + (showTime ? fmtTime(m.createdAt) : '') + '</div>';
+    html += axisHTML(m);
+    html += '<div class="body">';
+    if (m.text) html += '<div class="txt">' + esc(m.text) + '</div>';
+    if (m.images && m.images.length) {
+      html += '<div class="imgs ' + (m.images.length === 1 ? 'one' : 'many') + '">';
+      m.images.forEach(function (im) {
+        html += '<img data-src="' + esc(im.d) + '"' +
+          (im.w ? ' width="' + im.w + '" height="' + im.h + '"' : '') + ' alt="" loading="lazy">';
+      });
+      html += '</div>';
+    }
+    html += '<span class="tagg">' + esc(threadName(m.threadId)) + '</span>';
+    html += '</div></div>';
+  });
+  html += '<div class="hint" style="padding:20px 12px 40px">共 ' + list.length + ' 条 · 按时间正序</div>';
+  box.innerHTML = html;
+  $$('#folder-list img[data-src]').forEach(function (img) { obs.observe(img); });
+}
+
+/* ---------- 导出提醒 ---------- */
+function saveStats() {
+  try { writeLS('ssn.stat', JSON.stringify(S.stats)); } catch (e) {}
+}
+function bumpStats(dMsg, dImg, dBytes) {
+  S.stats.msg = Math.max(0, (S.stats.msg || 0) + dMsg);
+  S.stats.img = Math.max(0, (S.stats.img || 0) + dImg);
+  S.stats.bytes = Math.max(0, (S.stats.bytes || 0) + dBytes);
+  saveStats();
+}
+function lastExportAt() { return Number(readLS('ssn.lastExp', '0')) || 0; }
+function shouldRemind() {
+  if (isArchive()) return false;
+  var last = lastExportAt();
+  var img = S.stats.img || 0, msgN = S.stats.msg || 0;
+  if (!last) return S.threads.length >= 3 || msgN >= 30 || img >= 10;
+  if ((Date.now() - last) / 86400000 >= 45) return true;
+  if (img >= 300) return true;
+  if (msgN - (Number(readLS('ssn.expMsg', '0')) || 0) >= 500) return true;
+  return false;
+}
+function exportStatusLine() {
+  if (isArchive()) return '';
+  var last = lastExportAt();
+  var img = S.stats.img || 0;
+  if (!last) return img > 0 ? '还没有导出过 · 本机 ' + img + ' 张图片' : '还没有导出过';
+  var d = Math.floor((Date.now() - last) / 86400000);
+  var when = d <= 0 ? '今天' : (d + ' 天前');
+  return '上次导出：' + fmtShortDate(last) + '（' + when + '）' + (img ? ' · 本机 ' + img + ' 张图片' : '');
+}
+
+function settingsBlock() {
+  if (isArchive()) {
+    return '<div class="sblock"><div class="hint">这是只读归档文件。' +
+      '在「碎碎念」应用里使用「导入数据」即可把这些内容装回可编辑状态。</div></div>';
+  }
+  return '<div class="sblock">' +
+    '<div class="sec-title">数据</div>' +
+    '<div class="hint" style="padding:2px 12px 8px;' + (shouldRemind() ? 'color:var(--accent)' : '') + '">' +
+    esc(exportStatusLine()) + (shouldRemind() ? ' · 建议现在存一份' : '') + '</div>' +
+    '<button class="srow" id="btn-export"><span class="left">导出全部（生成 html）<span class="sub">含图片，可能在手机上较大</span></span>' +
+    '<svg class="icon"><use href="#i-download"/></svg></button>' +
+    '<button class="srow" id="btn-import"><span class="left">从文件导入<span class="sub">合并，不会覆盖已有内容</span></span>' +
+    '<svg class="icon"><use href="#i-upload"/></svg></button>' +
+    '<button class="srow danger" id="btn-wipe"><span class="left">清空本机数据<span class="sub">导出并确认无误后再操作</span></span>' +
+    '<svg class="icon"><use href="#i-trash"/></svg></button>' +
+    '<div class="hint">数据只存在这台设备的浏览器里，不会上传到任何服务器。' +
+    '建议每隔一段时间导出一次，存到电脑上。</div>' +
+    '</div>';
+}
+
+function fillPreviews(list) {
+  list.forEach(function (t) {
+    var el = $('[data-prev="' + t.id + '"]');
+    if (!el) return;
+    loadMessages(t.id).then(function (msgs) {
+      var last = msgs[msgs.length - 1];
+      if (!last) { el.textContent = '空'; return; }
+      var txt = last.text || '';
+      if (!txt && last.images && last.images.length) txt = '［图片］';
+      el.textContent = txt.length > 40 ? txt.slice(0, 40) + '…' : txt;
+    }).catch(function () { el.textContent = ''; });
+  });
+}
+
+/* =========================================================
+   7. 视图切换
+   ========================================================= */
+function openFolders() {
+  if (!S.folderView) renderFolders();
+  document.body.classList.add('animating');
+  document.body.classList.add('show-folders');
+  setTimeout(function () { document.body.classList.remove('animating'); }, 360);
+}
+function closeFolders() {
+  document.body.classList.add('animating');
+  document.body.classList.remove('show-folders');
+  setTimeout(function () { document.body.classList.remove('animating'); }, 360);
+  if (S.folderView) { S.folderView = null; }
+}
+
+function openThread(id) {
+  S.currentId = id;
+  writeLS('ssn.last', id);
+  if (isArchive()) {
+    renderHome();
+  } else {
+    loadMessages(id).then(function (msgs) {
+      S.messages = msgs;
+      renderHome();
+    });
+  }
+  S.folderView = null;
+  closeFolders();
+}
+
+/* =========================================================
+   8. 发送
+   ========================================================= */
+function updateSendBtn() {
+  var btn = $('#btn-send');
+  if (!btn) return;
+  var has = ($('#input').value.trim().length > 0) || S.pending.length > 0;
+  btn.classList.toggle('on', has);
+}
+
+function renderPending() {
+  var box = $('#pending');
+  box.innerHTML = S.pending.map(function (p, i) {
+    return '<div class="pi"><img src="' + esc(p.d) + '" alt=""><b data-rm="' + i + '">×</b></div>';
+  }).join('');
+}
+
+function doSend() {
+  if (isArchive()) { toast('归档文件是只读的'); return Promise.resolve(); }
+  var input = $('#input');
+  var text = input.value.replace(/\s+$/, '');
+  if (!text && !S.pending.length) return Promise.resolve();
+  if (!S.currentId) { toast('请先新建一个对话'); return Promise.resolve(); }
+
+  var thread = S.threads.filter(function (t) { return t.id === S.currentId; })[0];
+  if (!thread) return Promise.resolve();
+
+  var m = {
+    id: uid(),
+    threadId: S.currentId,
+    text: text,
+    images: S.pending.slice(),
+    createdAt: Date.now()
+  };
+
+  input.value = '';
+  input.style.height = 'auto';
+  S.pending = [];
+  renderPending();
+  updateSendBtn();
+  S.messages.push(m);
+  renderHome();
+  scrollBottom();
+  thread.updatedAt = m.createdAt;
+
+  return saveMessage(m).then(function () { return saveThread(thread); })
+    .then(function () {
+      if (S.searchIndex) S.searchIndex.push(m);
+      var b = text.length;
+      (m.images || []).forEach(function (im) { b += (im.d || '').length; });
+      bumpStats(1, (m.images || []).length, b);
+      S.tlCache = null;
+    })
+    .catch(function (e) { toast('保存失败：' + e.message); });
+}
+
+function scrollBottom() {
+  var list = $('#msg-list');
+  requestAnimationFrame(function () { list.scrollTop = list.scrollHeight; });
+}
+
+/* =========================================================
+   9. 新建 / 重命名 / 归类
+   ========================================================= */
+function newThread() {
+  if (isArchive()) { toast('归档文件是只读的'); return; }
+  createThread(INBOX).then(function (t) {
+    S.currentId = t.id;
+    S.messages = [];
+    writeLS('ssn.last', t.id);
+    renderHome();
+    closeFolders();
+    setTimeout(function () {
+      var input = $('#input');
+      if (input && window.matchMedia('(pointer:fine)').matches) input.focus();
+    }, 320);
+  });
+}
+
+function newFolder() {
+  if (isArchive()) return;
+  showSheet(
+    '<div class="sheet-h">新建文件夹</div>' +
+    '<label class="field"><input id="s-fname" placeholder="比如：工作、读书、梦里" maxlength="24"></label>' +
+    '<div class="sheet-actions">' +
+    '<button class="btn btn-ghost" data-act="cancel">取消</button>' +
+    '<button class="btn btn-primary" data-act="ok">创建</button></div>',
+    function (panel) {
+      var inp = $('#s-fname', panel);
+      setTimeout(function () { inp.focus(); }, 120);
+      panel.addEventListener('click', function (e) {
+        var act = e.target.closest('[data-act]');
+        if (!act) return;
+        if (act.dataset.act === 'cancel') { closeSheet(); return; }
+        var name = inp.value.trim();
+        if (!name) { inp.focus(); return; }
+        if (S.folders.some(function (f) { return f.name === name; })) { toast('已有同名文件夹'); return; }
+        var f = { id: uid(), name: name, order: S.folders.length, createdAt: Date.now() };
+        S.folders.push(f);
+        saveFolder(f).then(function () {
+          closeSheet();
+          S.folderView = null;
+          renderFolders();
+          toast('已创建「' + name + '」');
+        });
+      });
+      inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); $('[data-act="ok"]', panel).click(); } });
+    }
+  );
+}
+
+function openThreadSheet(threadId) {
+  var t = S.threads.filter(function (x) { return x.id === threadId; })[0];
+  if (!t) return;
+
+  var picks = S.folders.slice().sort(function (a, b) {
+    if (a.id === INBOX) return -1;
+    if (b.id === INBOX) return 1;
+    return (a.order || 0) - (b.order || 0);
+  }).map(function (f) {
+    return '<button class="pick' + (f.id === t.folderId ? ' on' : '') + '" data-pick="' + esc(f.id) + '">' +
+      esc(f.name) + '</button>';
+  }).join('');
+
+  showSheet(
+    '<div class="sheet-h">对话名称</div>' +
+    '<label class="field"><input id="s-tname" value="' + esc(t.title) + '" maxlength="40"></label>' +
+    '<div class="sheet-h">归到哪个文件夹</div>' +
+    '<div class="picks" id="s-picks">' + picks + '</div>' +
+    '<div class="sheet-actions">' +
+    '<button class="btn btn-danger" data-act="del">删除</button>' +
+    '<button class="btn btn-primary" data-act="ok">保存</button></div>',
+    function (panel) {
+      var chosen = t.folderId;
+      var inp = $('#s-tname', panel);
+      $('#s-picks', panel).addEventListener('click', function (e) {
+        var b = e.target.closest('[data-pick]');
+        if (!b) return;
+        chosen = b.dataset.pick;
+        $$('[data-pick]', panel).forEach(function (x) { x.classList.toggle('on', x === b); });
+      });
+      panel.addEventListener('click', function (e) {
+        var act = e.target.closest('[data-act]');
+        if (!act) return;
+        if (act.dataset.act === 'del') {
+          confirmSheet('删除这段对话？', '对话里的所有记录和图片都会一起删除，无法恢复。', '删除', function () {
+            if (isArchive()) return;
+            var ids = [];
+            loadMessages(t.id).then(function (msgs) {
+              return Promise.all(msgs.map(function (m) { return idbDel('messages', m.id); }));
+            }).then(function () {
+              return idbDel('threads', t.id);
+            }).then(function () {
+              S.threads = S.threads.filter(function (x) { return x.id !== t.id; });
+              if (S.currentId === t.id) {
+                var next = S.threads.sort(function (a, b) { return b.updatedAt - a.updatedAt; })[0];
+                if (next) { S.currentId = next.id; writeLS('ssn.last', next.id); return loadMessages(next.id); }
+                return createThread(INBOX).then(function (nt) { S.currentId = nt.id; writeLS('ssn.last', nt.id); return []; });
+              }
+              return S.messages;
+            }).then(function (msgs) {
+              S.messages = msgs || [];
+              renderHome();
+              renderFolders();
+              closeSheet();
+              toast('已删除');
+            });
+          });
+          return;
+        }
+        // save
+        var name = inp.value.trim();
+        if (name) t.title = name;
+        t.folderId = chosen;
+        saveThread(t).then(function () {
+          closeSheet();
+          renderHome();
+          renderFolders();
+          toast('已保存');
+        });
+      });
+    }
+  );
+}
+
+function openFolderSheet(folderId) {
+  var f = S.folders.filter(function (x) { return x.id === folderId; })[0];
+  if (!f) return;
+  var n = S.threads.filter(function (t) { return t.folderId === f.id; }).length;
+
+  showSheet(
+    '<div class="sheet-h">文件夹</div>' +
+    '<label class="field"><input id="s-rename" value="' + esc(f.name) + '" maxlength="24"></label>' +
+    '<div class="sheet-actions">' +
+    '<button class="btn btn-danger" data-act="del">删除</button>' +
+    '<button class="btn btn-primary" data-act="ok">保存</button></div>',
+    function (panel) {
+      var inp = $('#s-rename', panel);
+      panel.addEventListener('click', function (e) {
+        var act = e.target.closest('[data-act]');
+        if (!act) return;
+        if (act.dataset.act === 'del') {
+          confirmSheet(
+            '删除文件夹「' + f.name + '」？',
+            n > 0 ? '里面的 ' + n + ' 个对话会移到「未分类」，内容不会丢失。' : '这是一个空文件夹。',
+            '删除文件夹',
+            function () {
+              if (isArchive()) return;
+              var moved = S.threads.filter(function (t) { return t.folderId === f.id; });
+              moved.forEach(function (t) { t.folderId = INBOX; });
+              S.folders = S.folders.filter(function (x) { return x.id !== f.id; });
+              Promise.all(moved.map(function (t) { return saveThread(t); }))
+                .then(function () { return idbDel('folders', f.id); })
+                .then(function () {
+                  S.folderView = null;
+                  renderFolders();
+                  closeSheet();
+                  toast(n > 0 ? '已删除，' + n + ' 个对话移到未分类' : '已删除');
+                });
+            }
+          );
+          return;
+        }
+        var name = inp.value.trim();
+        if (!name) return;
+        f.name = name;
+        saveFolder(f).then(function () {
+          closeSheet();
+          renderFolders();
+          toast('已重命名');
+        });
+      });
+    }
+  );
+}
+
+/* =========================================================
+   10. Sheet / 确认框
+   ========================================================= */
+var sheetCleanup = null, sheetTimer = null;
+function showSheet(html, onMount) {
+  if (sheetTimer) { clearTimeout(sheetTimer); sheetTimer = null; }
+  var wrap = $('#sheet');
+  wrap.innerHTML = '<div class="sheet-mask"></div><div class="sheet-panel">' + html + '</div>';
+  wrap.classList.add('on');
+  requestAnimationFrame(function () { wrap.classList.add('in'); });
+  $('.sheet-mask', wrap).addEventListener('click', closeSheet);
+  if (onMount) onMount($('.sheet-panel', wrap));
+}
+function closeSheet() {
+  var wrap = $('#sheet');
+  if (!wrap) return;
+  wrap.classList.remove('in');
+  if (sheetTimer) clearTimeout(sheetTimer);
+  sheetTimer = setTimeout(function () {
+    sheetTimer = null;
+    wrap.classList.remove('on');
+    wrap.innerHTML = '';
+    renderDrawer();
+  }, 260);
+  if (sheetCleanup) { sheetCleanup(); sheetCleanup = null; }
+}
+function confirmSheet(title, desc, okText, onOk) {
+  showSheet(
+    '<div class="sheet-h">请确认</div>' +
+    '<div style="font-size:16px;font-weight:500;line-height:1.5;margin-bottom:6px">' + esc(title) + '</div>' +
+    '<div style="font-size:13.5px;color:var(--text-2);line-height:1.7">' + esc(desc) + '</div>' +
+    '<div class="sheet-actions">' +
+    '<button class="btn btn-ghost" data-act="cancel">取消</button>' +
+    '<button class="btn btn-danger" data-act="ok">' + esc(okText) + '</button></div>',
+    function (panel) {
+      panel.addEventListener('click', function (e) {
+        var act = e.target.closest('[data-act]');
+        if (!act) return;
+        if (act.dataset.act === 'cancel') { closeSheet(); return; }
+        closeSheet();
+        setTimeout(function () { onOk(); }, 60);
+      });
+    }
+  );
+}
+
+/* =========================================================
+   11. 搜索
+   ========================================================= */
+function openSearch() {
+  var layer = $('#search-layer');
+  layer.classList.add('on');
+  var inp = $('#search-input');
+  inp.value = '';
+  $('#search-res').innerHTML = '<div class="res-empty">输入关键词，搜索所有对话里的文字</div>';
+  setTimeout(function () { inp.focus(); }, 150);
+  ensureIndex();
+}
+function closeSearch() {
+  $('#search-layer').classList.remove('on');
+  $('#search-input').blur();
+}
+function ensureIndex() {
+  if (S.searchIndex) return Promise.resolve(S.searchIndex);
+  return allMessages().then(function (all) {
+    S.searchIndex = all.map(function (m) {
+      return {
+        id: m.id, threadId: m.threadId, text: (m.text || ''),
+        comments: (m.comments || []), createdAt: m.createdAt
+      };
+    });
+    return S.searchIndex;
+  });
+}
+function runSearch(q) {
+  q = q.trim();
+  var box = $('#search-res');
+  if (!q) {
+    box.innerHTML = '<div class="res-empty">输入关键词，搜索所有记录和评论</div>';
+    return;
+  }
+  var lower = q.toLowerCase();
+  ensureIndex().then(function (idx) {
+    var hits = [];
+    for (var i = 0; i < idx.length; i++) {
+      var it = idx[i];
+      if (it.text) {
+        var pos = it.text.toLowerCase().indexOf(lower);
+        if (pos >= 0) hits.push({ it: it, pos: pos, txt: it.text, kind: 'msg' });
+      }
+      var cs = it.comments || [];
+      for (var j = 0; j < cs.length; j++) {
+        var ctxt = cs[j].text || '';
+        var cp = ctxt.toLowerCase().indexOf(lower);
+        if (cp >= 0) hits.push({ it: it, pos: cp, txt: ctxt, kind: 'cmt' });
+        var rps = cs[j].replies || [];
+        for (var k = 0; k < rps.length; k++) {
+          var rtxt = rps[k].text || '';
+          var rp = rtxt.toLowerCase().indexOf(lower);
+          if (rp >= 0) hits.push({ it: it, pos: rp, txt: rtxt, kind: 'rep' });
+        }
+      }
+    }
+    hits.sort(function (a, b) { return b.it.createdAt - a.it.createdAt; });
+    if (!hits.length) {
+      box.innerHTML = '<div class="res-empty">没有找到「' + esc(q) + '」<br>试试更短的关键词</div>';
+      return;
+    }
+    var html = '';
+    hits.slice(0, 120).forEach(function (h) {
+      var txt = h.txt;
+      var start = Math.max(0, h.pos - 34);
+      var end = Math.min(txt.length, h.pos + q.length + 46);
+      var pre = (start > 0 ? '…' : '') + esc(txt.slice(start, h.pos));
+      var mid = esc(txt.slice(h.pos, h.pos + q.length));
+      var post = esc(txt.slice(h.pos + q.length, end)) + (end < txt.length ? '…' : '');
+      var th = S.threads.filter(function (t) { return t.id === h.it.threadId; })[0];
+      var title = th ? th.title : '（已删除的对话）';
+      html += '<button class="res" data-goto="' + esc(h.it.threadId) + '" data-mid="' + esc(h.it.id) + '"' +
+        (h.kind === 'msg' ? '' : ' data-cmt="1"') + '>' +
+        '<span class="rt"><span>' + esc(title) +
+        (h.kind === 'cmt' ? ' · 评论' : (h.kind === 'rep' ? ' · 回复' : '')) + '</span>' +
+        '<span>' + esc(fmtShortDate(h.it.createdAt) + ' ' + fmtTime(h.it.createdAt)) + '</span></span>' +
+        '<span class="rx">' + pre + '<mark>' + mid + '</mark>' + post + '</span></button>';
+    });
+    box.innerHTML = html;
+  });
+}
+function gotoMessage(threadId, msgId, openCmt) {
+  closeSearch();
+  var th = S.threads.filter(function (t) { return t.id === threadId; })[0];
+  if (!th) { toast('这段对话已经不在了'); return; }
+
+  var go = function () {
+    setTimeout(function () {
+      if (openCmt) { openCommentPage(msgId); return; }
+      var el = document.getElementById('m-' + msgId);
+      if (el) {
+        el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        el.classList.add('flash');
+        setTimeout(function () { el.classList.remove('flash'); }, 1700);
+      }
+    }, 380);
+  };
+
+  if (S.currentId === threadId && !S.folderView) {
+    document.body.classList.remove('show-folders');
+    go();
+    return;
+  }
+  S.currentId = threadId;
+  writeLS('ssn.last', threadId);
+  S.folderView = null;
+  document.body.classList.remove('animating');
+  document.body.classList.remove('show-folders');
+  if (isArchive()) { S.messages = (S.archive.messages || []).filter(function (m) { return m.threadId === threadId; })
+    .sort(function (a, b) { return a.createdAt - b.createdAt; }); renderHome(false); go(); }
+  else loadMessages(threadId).then(function (msgs) { S.messages = msgs; renderHome(false); go(); });
+}
+
+/* =========================================================
+   12. 导入 / 导出
+   ========================================================= */
+function buildArchiveHTML(preMsgs) {
+  var cssEl = document.getElementById('app-css');
+  var jsEl = document.getElementById('app-js');
+  var tplEl = document.getElementById('app-shell');
+  var css = cssEl ? cssEl.textContent : '';
+  var js = jsEl ? jsEl.textContent : '';
+  var tpl = tplEl ? tplEl.outerHTML : '';
+
+  return (preMsgs ? Promise.resolve(preMsgs) : allMessages()).then(function (msgs) {
+    var payload = {
+      version: 2,
+      app: 'suisuinian',
+      exportedAt: Date.now(),
+      folders: S.folders.map(function (f) { return { id: f.id, name: f.name, order: f.order || 0, isSystem: !!f.isSystem, createdAt: f.createdAt || 0 }; }),
+      threads: S.threads.map(function (t) {
+        return { id: t.id, title: t.title, folderId: t.folderId, createdAt: t.createdAt, updatedAt: t.updatedAt };
+      }),
+      messages: msgs.map(function (m) {
+        return {
+          id: m.id, threadId: m.threadId, text: m.text || '', images: m.images || [],
+          comments: m.comments || [], createdAt: m.createdAt
+        };
+      })
+    };
+
+    var json = JSON.stringify(payload)
+      .replace(/<\/(script)/gi, '<\\/$1')
+      .replace(/\x3C!--/g, '\\u003C!--');
+
+    var SCRIPT_END = '<' + '/script>';
+
+    var out =
+      '<!DOCTYPE html>\n<html lang="zh-CN" data-theme="' + THEME + '">\n<head>\n' +
+      '<meta charset="utf-8">\n' +
+      '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">\n' +
+      '<meta name="color-scheme" content="' + (THEME === 'light' ? 'light' : 'dark') + '">\n' +
+      '<meta name="theme-color" content="' + (THEME === 'light' ? '#EDE7DB' : '#101519') + '">\n' +
+      '<meta name="apple-mobile-web-app-capable" content="yes">\n' +
+      '<title>碎碎念 · 归档 ' + stampName() + '</title>\n' +
+      '<style id="app-css">' + css + '</style>\n</head>\n<body>\n' +
+      '<div id="root"></div>\n' +
+      tpl + '\n' +
+      '<' + 'script id="archive-data" type="application/json">' + json + SCRIPT_END + '\n' +
+      '<' + 'script id="app-js">' + js + SCRIPT_END + '\n' +
+      '</body>\n</html>';
+
+    return { html: out, payload: payload, size: out.length };
+  });
+}
+
+function downloadBlob(blob, name) {
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = name;
+  a.rel = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function () { document.body.removeChild(a); URL.revokeObjectURL(url); }, 4000);
+}
+
+function doExport() {
+  if (isArchive()) { toast('归档文件不能再次导出'); return; }
+  toast('正在读取数据…', 8000);
+  allMessages().then(function (msgs) {
+    var bytes = 0;
+    msgs.forEach(function (m) {
+      bytes += (m.text || '').length;
+      (m.images || []).forEach(function (im) { bytes += (im.d || '').length; });
+    });
+    var est = bytes / 1048576;
+    if (est > 90) {
+      confirmSheet(
+        '这份数据约 ' + est.toFixed(0) + ' MB',
+        '在 iPhone 上一次打包这么大的文件有可能失败。如果失败，建议分几次导出（先把图片少的对话导出），或改在电脑上操作。',
+        '仍然导出',
+        function () { packArchive(msgs); }
+      );
+      return;
+    }
+    packArchive(msgs);
+  }).catch(function (e) {
+    toast('读取失败：' + (e && e.message ? e.message : e));
+  });
+}
+
+function packArchive(msgs) {
+  toast('正在打包，请稍候…', 10000);
+  buildArchiveHTML(msgs).then(function (res) {
+    var name = '碎碎念-' + stampName() + '.html';
+    var blob = new Blob([res.html], { type: 'text/html;charset=utf-8' });
+    var mb = (blob.size / 1048576).toFixed(1);
+    var file;
+    try { file = new File([blob], name, { type: 'text/html' }); } catch (e) { file = null; }
+
+    var finish = function (via) {
+      writeLS('ssn.lastExp', String(Date.now()));
+      writeLS('ssn.expMsg', String(S.stats.msg || 0));
+      renderDrawer();
+      var extra = blob.size > 150 * 1048576 ? '，较大，建议在电脑上打开' : '';
+      toast('已导出 ' + mb + 'MB · ' + via + extra, 4200);
+    };
+
+    var canShare = false;
+    try {
+      canShare = !!(file && navigator.canShare && navigator.canShare({ files: [file] }));
+    } catch (e) { canShare = false; }
+
+    if (canShare) {
+      navigator.share({ files: [file], title: '碎碎念归档' }).then(function () {
+        finish('已保存');
+      }).catch(function (err) {
+        if (err && err.name === 'AbortError') { toast('已取消'); return; }
+        downloadBlob(blob, name);
+        finish('已下载');
+      });
+    } else {
+      downloadBlob(blob, name);
+      finish('已下载到文件');
+    }
+  }).catch(function (e) {
+    toast('导出失败：' + (e && e.message ? e.message : e));
+  });
+}
+
+function doImport() {
+  if (isArchive()) { toast('请先在应用里导入'); return; }
+  var inp = $('#file-input');
+  inp.value = '';
+  inp.click();
+}
+
+function handleImportFile(file) {
+  var rd = new FileReader();
+  toast('正在读取…', 5000);
+  rd.onload = function () {
+    try {
+      var text = String(rd.result || '');
+      var re = new RegExp('<' + 'script[^>]*id="archive-data"[^>]*>([\\s\\S]*?)<' + '\\/script>', 'i');
+      var m = text.match(re);
+      if (!m) { toast('这不是碎碎念的归档文件'); return; }
+      var payload = JSON.parse(m[1]);
+      if (!payload || !payload.messages) { toast('文件内容不完整'); return; }
+      previewImport(payload);
+    } catch (e) {
+      toast('解析失败：' + (e && e.message ? e.message : e));
+    }
+  };
+  rd.onerror = function () { toast('读取文件失败'); };
+  rd.readAsText(file);
+}
+
+function previewImport(payload) {
+  var newThreads = payload.threads || [];
+  var newMsgs = payload.messages || [];
+  var existing = {};
+  S.threads.forEach(function (t) { existing[t.id] = 1; });
+  var addT = newThreads.filter(function (t) { return !existing[t.id]; }).length;
+  var imgN = 0;
+  newMsgs.forEach(function (m) { imgN += (m.images || []).length; });
+
+  showSheet(
+    '<div class="sheet-h">导入预览</div>' +
+    '<div style="font-size:14px;line-height:1.9;color:var(--text-2)">' +
+    '文件包含 <b style="color:var(--text)">' + (payload.threads || []).length + '</b> 个对话、' +
+    '<b style="color:var(--text)">' + newMsgs.length + '</b> 条记录、' +
+    '<b style="color:var(--text)">' + imgN + '</b> 张图片。<br>' +
+    '其中 <b style="color:var(--accent)">' + addT + '</b> 个对话是本机没有的，会合并进来；' +
+    '重复的会跳过，不会产生重复内容。' +
+    '</div>' +
+    '<div class="sheet-actions">' +
+    '<button class="btn btn-ghost" data-act="cancel">取消</button>' +
+    '<button class="btn btn-primary" data-act="ok">合并导入</button></div>',
+    function (panel) {
+      panel.addEventListener('click', function (e) {
+        var act = e.target.closest('[data-act]');
+        if (!act) return;
+        if (act.dataset.act === 'cancel') { closeSheet(); return; }
+        closeSheet();
+        runImport(payload);
+      });
+    }
+  );
+}
+
+/* 导入消息：同 id 覆盖文字与图片，但评论按 id 求并集，不丢本机后加的批注 */
+function mergePutMessages(msgs) {
+  if (!msgs || !msgs.length) return Promise.resolve();
+  var merge = function (old, m) {
+    if (old && old.comments && old.comments.length) {
+      var seen = {};
+      (m.comments || []).forEach(function (c) { seen[c.id] = 1; });
+      m.comments = (m.comments || []).concat(old.comments.filter(function (c) { return !seen[c.id]; }));
+    }
+    /* 同一条评论两边都有时，楼中楼的回复按 id 求并集 */
+    if (old && old.comments && old.comments.length && m.comments) {
+      var byId = {};
+      m.comments.forEach(function (c) { byId[c.id] = c; });
+      old.comments.forEach(function (oc) {
+        var nc = byId[oc.id];
+        var ors = oc.replies || [];
+        if (!nc || !ors.length) return;
+        if (!nc.replies) nc.replies = [];
+        var seenR = {};
+        nc.replies.forEach(function (r) { seenR[r.id] = 1; });
+        ors.forEach(function (r) { if (!seenR[r.id]) { seenR[r.id] = 1; nc.replies.push(r); } });
+      });
+    }
+    return m;
+  };
+  if (MEM_MODE) {
+    var o = MEM.messages || (MEM.messages = {});
+    msgs.forEach(function (m) { o[m.id] = merge(o[m.id], m); });
+    return Promise.resolve();
+  }
+  return openDB().then(function (db) {
+    return new Promise(function (res, rej) {
+      var t = db.transaction('messages', 'readwrite');
+      var st = t.objectStore('messages');
+      msgs.forEach(function (m) {
+        var g = st.get(m.id);
+        g.onsuccess = function () { st.put(merge(g.result, m)); };
+      });
+      t.oncomplete = function () { res(); };
+      t.onerror = function () { rej(t.error); };
+    });
+  });
+}
+
+function runImport(payload) {
+  toast('正在写入…', 8000);
+  var folders = (payload.folders || []).filter(function (f) { return f && f.id; });
+  var threads = (payload.threads || []).filter(function (t) { return t && t.id; });
+  var msgs = (payload.messages || []).filter(function (m) { return m && m.id; });
+
+  var fid = {};
+  S.folders.forEach(function (f) { fid[f.id] = 1; });
+  var addFolders = folders.filter(function (f) { return !fid[f.id]; });
+
+  var tid = {};
+  S.threads.forEach(function (t) { tid[t.id] = 1; });
+  var addThreads = threads.filter(function (t) {
+    if (tid[t.id]) return false;
+    if (!t.folderId) t.folderId = INBOX;
+    return true;
+  });
+
+  var imgN = 0, bytes = 0;
+  msgs.forEach(function (m) {
+    imgN += (m.images || []).length;
+    bytes += (m.text || '').length;
+    (m.images || []).forEach(function (im) { bytes += (im.d || '').length; });
+  });
+
+  idbPutAll('folders', addFolders).then(function () {
+    return idbPutAll('threads', addThreads);
+  }).then(function () {
+    return mergePutMessages(msgs);
+  }).then(function () {
+    S.folders = S.folders.concat(addFolders);
+    S.threads = S.threads.concat(addThreads);
+    S.searchIndex = null;
+    S.tlCache = null;
+    bumpStats(msgs.length, imgN, bytes);
+    // 切到最新的一条
+    var latest = S.threads.slice().sort(function (a, b) { return b.updatedAt - a.updatedAt; })[0];
+    if (latest) {
+      S.currentId = latest.id;
+      writeLS('ssn.last', latest.id);
+      return loadMessages(latest.id).then(function (mm) { S.messages = mm; });
+    }
+  }).then(function () {
+    renderHome();
+    renderFolders();
+    toast('导入完成 · 新增 ' + addThreads.length + ' 个对话', 3200);
+  }).catch(function (e) {
+    toast('导入失败：' + (e && e.message ? e.message : e));
+  });
+}
+
+function doWipe() {
+  confirmSheet(
+    '清空这台设备上的所有数据？',
+    '对话、图片、文件夹都会从本机删除，无法恢复。请确认你已经导出并能在电脑上打开那个文件。',
+    '我已备份，清空',
+    function () {
+      Promise.all([idbClear('messages'), idbClear('threads'), idbClear('folders')])
+        .then(function () {
+          writeLS('ssn.last', '');
+          S.threads = []; S.messages = []; S.folders = []; S.currentId = null; S.searchIndex = null;
+          S.tlCache = null; S.tl = null; S.cmtMsg = null; S.cmtReply = null; S.monthMsgs = [];
+          S.stats = { img: 0, msg: 0, bytes: 0 }; saveStats();
+          return initApp(true);
+        })
+        .then(function () {
+          renderHome();
+          renderFolders();
+          toast('已清空');
+        })
+        .catch(function (e) { toast('清空失败：' + e.message); });
+    }
+  );
+}
+
+/* =========================================================
+   13. 初始化
+   ========================================================= */
+function showFatal(err) {
+  var root = document.getElementById('root');
+  var msg = err && err.message ? err.message : String(err);
+  var isFile = location.protocol === 'file:';
+  var msg2 = isFile
+    ? '你正在以本地文件方式打开，浏览器出于安全限制拒绝了数据存储。<br><br>' +
+      '请把文件放到任意静态网页地址后访问（例如部署到免费静态托管），再打开对应网址。'
+    : '错误信息：' + esc(msg);
+  root.innerHTML = '<div class="fatal"><b>无法启动</b>' + msg2 + '</div>';
+}
+
+function showMemBar() {
+  var home = document.getElementById('home');
+  if (!home || home.querySelector('.membar')) return;
+  var d = document.createElement('div');
+  d.className = 'membar';
+  d.innerHTML = '<div><b>当前环境无法保存数据</b>（预览窗或本地文件的安全限制）。' +
+    '记录只存在于本次会话，刷新或关闭后会丢失。' +
+    '把它发布到网址后打开，即可正常长期保存。</div>' +
+    '<span class="mclose"><svg class="icon" style="width:14px;height:14px"><use href="#i-x"/></svg></span>';
+  d.querySelector('.mclose').addEventListener('click', function () {
+    d.remove();
+    home.classList.remove('has-membar');
+  });
+  home.classList.add('has-membar');
+  home.insertBefore(d, home.firstChild);
+}
+
+function initApp(reset) {
+  S.mode = 'app';
+  return openDB().catch(function (e) {
+    if (MEM_MODE) return null;   // 已降级为内存存储，继续跑
+    throw e;
+  }).then(function () {
+    return Promise.all([idbAll('folders'), idbAll('threads')]);
+  }).then(function (res) {
+    S.folders = res[0];
+    S.threads = res[1];
+
+    if (!S.folders.some(function (f) { return f.id === INBOX; })) {
+      var inbox = { id: INBOX, name: '未分类', order: 0, isSystem: true, createdAt: 0 };
+      S.folders.push(inbox);
+      return saveFolder(inbox).then(function () { return pickThread(reset); });
+    }
+    return pickThread(reset);
+  });
+}
+
+function pickThread(reset) {
+  var last = reset ? '' : readLS('ssn.last', '');
+  var th = S.threads.filter(function (t) { return t.id === last; })[0];
+  if (!th) th = S.threads.slice().sort(function (a, b) { return b.updatedAt - a.updatedAt; })[0];
+
+  if (!th) {
+    return createThread(INBOX).then(function (nt) {
+      S.currentId = nt.id;
+      S.messages = [];
+      writeLS('ssn.last', nt.id);
+    });
+  }
+  S.currentId = th.id;
+  writeLS('ssn.last', th.id);
+  return loadMessages(th.id).then(function (msgs) { S.messages = msgs; });
+}
+
+function initArchive(payload) {
+  S.mode = 'archive';
+  S.archive = payload;
+  S.folders = (payload.folders || []).slice();
+  S.threads = (payload.threads || []).slice();
+
+  if (!S.folders.some(function (f) { return f.id === INBOX; })) {
+    S.folders.push({ id: INBOX, name: '未分类', order: 0, isSystem: true });
+  }
+  S.threads.forEach(function (t) { if (!t.folderId) t.folderId = INBOX; });
+
+  var hasMsg = {};
+  (payload.messages || []).forEach(function (m) { hasMsg[m.threadId] = 1; });
+  var sorted = S.threads.slice().sort(function (a, b) { return b.updatedAt - a.updatedAt; });
+  var th = sorted.filter(function (t) { return hasMsg[t.id]; })[0] || sorted[0];
+  if (th) {
+    S.currentId = th.id;
+    S.messages = (payload.messages || [])
+      .filter(function (m) { return m.threadId === th.id; })
+      .sort(function (a, b) { return a.createdAt - b.createdAt; });
+  }
+}
+
+/* =========================================================
+   13.5 抽屉
+   ========================================================= */
+function drawerSec(ts) {
+  var now = Date.now();
+  if (dayKey(ts) === dayKey(now)) return '今天';
+  if (dayKey(ts) === dayKey(now - 86400000)) return '昨天';
+  var d = new Date(ts), n = new Date();
+  var days = (now - ts) / 86400000;
+  if (days < 7) return '最近一周';
+  if (d.getFullYear() === n.getFullYear()) return (d.getMonth() + 1) + ' 月';
+  return d.getFullYear() + ' 年 ' + (d.getMonth() + 1) + ' 月';
+}
+
+function renderDrawer() {
+  var list = $('#dr-list');
+  if (!list) return;
+
+  var arr = allThreadsDesc();
+  if (!arr.length) {
+    list.innerHTML = '<div class="dr-empty">还没有对话。<br>点上面的「新建对话」写第一句。</div>';
+    return;
+  }
+
+  var html = '', lastSec = '';
+  arr.forEach(function (t) {
+    var ts = t.updatedAt || t.createdAt || 0;
+    var lab = drawerSec(ts);
+    if (lab !== lastSec) {
+      html += '<div class="dr-sec">' + esc(lab) + '</div>';
+      lastSec = lab;
+    }
+    html += '<div class="dr-item' + (t.id === S.currentId ? ' cur' : '') + '" data-dtid="' + esc(t.id) + '">';
+    html += '<span class="dr-t">' + esc(t.title) + '</span>';
+    html += '<span class="dr-h">' + esc(lab === '今天' ? fmtTime(ts) : fmtShortDate(ts)) + '</span>';
+    if (!isArchive()) {
+      html += '<span class="dr-m" data-dmore="' + esc(t.id) + '"><svg class="icon"><use href="#i-more"/></svg></span>';
+    }
+    html += '</div>';
+  });
+  list.innerHTML = html;
+
+  var fc = $('#dr-fcnt');
+  if (fc) fc.textContent = S.folders.length + ' 个';
+  var dc = $('#dr-dcnt');
+  if (dc) dc.textContent = S.threads.length + ' 个';
+
+  var dd = $('#dr-data');
+  if (dd) {
+    var want = shouldRemind();
+    var w = dd.querySelector('.dotw');
+    if (want && !w) dd.insertAdjacentHTML('beforeend', '<span class="dotw"></span>');
+    else if (!want && w) w.remove();
+  }
+  applyTheme(THEME, false);
+}
+
+function openDrawer() {
+  renderDrawer();
+  document.body.classList.add('show-drawer');
+  var l = $('#dr-list');
+  if (l) {
+    var cur = l.querySelector('.dr-item.cur');
+    if (cur) {
+      var top = cur.offsetTop - l.clientHeight / 2;
+      l.scrollTop = Math.max(0, top);
+    }
+  }
+}
+function closeDrawer() {
+  document.body.classList.remove('show-drawer');
+}
+
+function openDataSheet() {
+  if (isArchive()) { toast('归档文件里没有数据操作'); return; }
+  var status = '<div style="font-size:12.5px;line-height:1.75;color:var(--text-3);margin-bottom:16px">' +
+    esc(exportStatusLine()) + '</div>';
+  if (shouldRemind()) {
+    status += '<div style="font-size:12.5px;line-height:1.75;color:var(--accent);margin:-8px 0 16px">' +
+      '建议现在导出一份存到电脑或网盘，确认能打开之后，再清空本机数据腾出空间。</div>';
+  }
+  showSheet(
+    '<div class="sheet-h">数据</div>' + status +
+    '<div class="sheet-actions col">' +
+    '<button class="btn btn-ghost" data-act="exp">导出全部（生成 html）</button>' +
+    '<button class="btn btn-ghost" data-act="imp">从文件导入（合并）</button>' +
+    '<button class="btn btn-danger" data-act="wipe">清空本机数据</button></div>' +
+    '<div class="hint">数据只存在这台设备的浏览器里，不会上传。' +
+    '导出的 html 既是备份，双击也能直接看。</div>',
+    function (panel) {
+      panel.addEventListener('click', function (e) {
+        var a = e.target.closest('[data-act]');
+        if (!a) return;
+        var act = a.dataset.act;
+        closeSheet();
+        setTimeout(function () {
+          if (act === 'exp') doExport();
+          else if (act === 'imp') doImport();
+          else doWipe();
+        }, 140);
+      });
+    }
+  );
+}
+
+/* =========================================================
+   14. 事件绑定
+   ========================================================= */
+function bindUI() {
+  // --- 主页 ---
+  $('#btn-drawer').addEventListener('click', openDrawer);
+
+  $('#btn-openfolders').addEventListener('click', function () {
+    if (document.body.classList.contains('show-folders')) return;
+    S.folderView = null;
+    S.tl = null;
+    S.tlMode = 'folders';
+    renderFolders();
+    openFolders();
+  });
+
+  $('#seg').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-seg]');
+    if (!b) return;
+    if (b.dataset.seg === S.tlMode) return;
+    S.tlMode = b.dataset.seg;
+    S.tl = null;
+    renderFolders();
+    var l = $('#folder-list');
+    if (l) l.scrollTop = 0;
+  });
+
+  // --- 抽屉 ---
+  $('#drawer-mask').addEventListener('click', closeDrawer);
+
+  $('#dr-new').addEventListener('click', function () {
+    closeDrawer();
+    setTimeout(newThread, 90);
+  });
+
+  $('#dr-search').addEventListener('click', function () {
+    closeDrawer();
+    setTimeout(openSearch, 120);
+  });
+
+  $('#dr-folders').addEventListener('click', function () {
+    closeDrawer();
+    S.folderView = null;
+    setTimeout(function () { renderFolders(); openFolders(); }, 120);
+  });
+
+  $('#dr-data').addEventListener('click', function () {
+    closeDrawer();
+    setTimeout(openDataSheet, 140);
+  });
+
+  $('#dr-theme').addEventListener('click', function () {
+    applyTheme(THEME === 'light' ? 'dark' : 'light');
+    toast(THEME === 'light' ? '日间' : '夜间', 1100);
+  });
+
+  $('#dr-list').addEventListener('click', function (e) {
+    var more = e.target.closest('[data-dmore]');
+    if (more) { e.stopPropagation(); openThreadSheet(more.dataset.dmore); return; }
+    var it = e.target.closest('[data-dtid]');
+    if (!it) return;
+    var id = it.dataset.dtid;
+    closeDrawer();
+    if (id === S.currentId) return;
+    setTimeout(function () { openThread(id); }, 90);
+  });
+
+  $('#thread-title').addEventListener('click', function () {
+    if (!S.currentId) return;
+    if (isArchive()) { toast('归档文件只读'); return; }
+    if (S.tlMode === 'time' || S.tl) return;
+    openThreadSheet(S.currentId);
+  });
+
+  // 评论：点时间轴上的圆点进评论页
+  $('#msg-list').addEventListener('click', function (e) {
+    var ax = e.target.closest('[data-cmt]');
+    if (!ax) return;
+    e.preventDefault();
+    openCommentPage(ax.dataset.cmt);
+  });
+
+  // --- 评论页 ---
+  $('#cmt-back').addEventListener('click', closeCommentPage);
+  $('#cmt-scroll').addEventListener('click', function (e) {
+    var rep = e.target.closest('[data-rep]');
+    if (!rep) return;
+    var m = findMsgAnywhere(S.cmtMsg);
+    if (!m || !cmtOf(m, rep.dataset.rep)) return;
+    S.cmtReply = rep.dataset.rep;
+    syncCmtDock(m);
+    $('#cmt-input').focus();
+  });
+  $('#cmt-rep-x').addEventListener('click', function () {
+    var m = findMsgAnywhere(S.cmtMsg);
+    S.cmtReply = null;
+    if (m) syncCmtDock(m);
+  });
+  var cmtInput = $('#cmt-input');
+  cmtInput.addEventListener('input', function () {
+    cmtInput.style.height = 'auto';
+    cmtInput.style.height = Math.min(cmtInput.scrollHeight, 104) + 'px';
+  });
+  cmtInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); sendCmt(); }
+  });
+  $('#cmt-send').addEventListener('click', sendCmt);
+  bindCmtSwipe();
+  bindLongPress($('#cmt-scroll'), '.crep[data-rid], .cmi[data-cid]', openCmtActions);
+
+  var input = $('#input');
+  input.addEventListener('input', function () {
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 116) + 'px';
+    updateSendBtn();
+  });
+  input.addEventListener('focus', function () { setTimeout(scrollBottom, 320); });
+  input.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); doSend(); }
+  });
+
+  $('#btn-send').addEventListener('click', doSend);
+
+  $('#btn-pick').addEventListener('click', function () {
+    if (isArchive()) { toast('归档文件只读'); return; }
+    var f = $('#img-input');
+    f.value = '';
+    f.click();
+  });
+
+  $('#img-input').addEventListener('change', function (e) {
+    var files = Array.prototype.slice.call(e.target.files || []);
+    if (!files.length) return;
+    toast('正在处理图片…', 4000);
+    var chain = Promise.resolve();
+    files.forEach(function (file) {
+      chain = chain.then(function () {
+        return compressImage(file).then(function (img) {
+          S.pending.push(img);
+          renderPending();
+          updateSendBtn();
+        }).catch(function () { toast('有一张图片处理失败'); });
+      });
+    });
+  });
+
+  $('#pending').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-rm]');
+    if (!b) return;
+    S.pending.splice(Number(b.dataset.rm), 1);
+    renderPending();
+    updateSendBtn();
+  });
+
+  // 图片放大
+  $('#msg-list').addEventListener('click', function (e) {
+    var img = e.target.closest('.imgs img');
+    if (!img) return;
+    var src = img.getAttribute('src') || img.getAttribute('data-src');
+    if (!src) return;
+    $('#viewer-img').src = src;
+    $('#viewer').classList.add('on');
+  });
+  $('#viewer').addEventListener('click', function () {
+    $('#viewer').classList.remove('on');
+    $('#viewer-img').src = '';
+  });
+
+  // 长按消息 -> 操作
+  bindLongPress($('#msg-list'), '.msg', function (el) {
+    var mid = el.getAttribute('data-mid');
+    if (!mid) return;
+    var m = S.messages.filter(function (x) { return x.id === mid; })[0];
+    if (!m) return;
+    var txt = m.text || '';
+    var cn = (m.comments || []).length;
+    showSheet(
+      '<div class="sheet-h">这条记录</div>' +
+      (txt ? '<div style="font-size:14px;line-height:1.75;color:var(--text-2);max-height:120px;overflow:auto;' +
+        'background:var(--bg-soft);padding:12px;border-radius:11px;white-space:pre-wrap">' + esc(txt) + '</div>' : '') +
+      '<div class="sheet-actions" style="margin-top:14px">' +
+      (txt ? '<button class="btn btn-ghost" data-act="copy">复制</button>' : '') +
+      '<button class="btn btn-ghost" data-act="cmt">' + (cn ? '评论 · ' + cn : '写评论') + '</button>' +
+      (isArchive() ? '' : '<button class="btn btn-danger" data-act="del">删除</button>') +
+      '</div>',
+      function (panel) {
+        panel.addEventListener('click', function (e) {
+          var act = e.target.closest('[data-act]');
+          if (!act) return;
+          if (act.dataset.act === 'cmt') {
+            closeSheet();
+            setTimeout(function () { openCommentPage(m.id); }, 200);
+            return;
+          }
+          if (act.dataset.act === 'copy') {
+            var done = function () { closeSheet(); toast('已复制'); };
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              navigator.clipboard.writeText(txt).then(done).catch(function () { closeSheet(); });
+            } else done();
+            return;
+          }
+          if (act.dataset.act === 'del') {
+            closeSheet();
+            setTimeout(function () {
+              idbDel('messages', m.id).then(function () {
+                S.messages = S.messages.filter(function (x) { return x.id !== m.id; });
+                var ib = 0;
+                (m.images || []).forEach(function (im) { ib += (im.d || '').length; });
+                bumpStats(-1, -(m.images || []).length, -((m.text || '').length + ib));
+                S.tlCache = null;
+                S.searchIndex = null;
+                var th = S.threads.filter(function (t) { return t.id === m.threadId; })[0];
+                if (th && S.messages.length) {
+                  th.updatedAt = S.messages[S.messages.length - 1].createdAt;
+                  saveThread(th);
+                }
+                renderHome(false);
+                toast('已删除');
+              });
+            }, 80);
+          }
+        });
+      }
+    );
+  });
+
+  // --- 分类页 ---
+  $('#btn-back').addEventListener('click', function () {
+    if (S.tl) {
+      S.tl = null;
+      renderFolders();
+      var l0 = $('#folder-list');
+      if (l0) l0.scrollTop = 0;
+      return;
+    }
+    if (S.folderView) {
+      S.folderView = null;
+      renderFolders();
+    } else {
+      closeFolders();
+    }
+  });
+
+  $('#btn-newfolder').addEventListener('click', function () {
+    if (S.folderView) { S.folderView = null; renderFolders(); return; }
+    newFolder();
+  });
+
+  $('#btn-sort').addEventListener('click', function () {
+    S.sortAsc = !S.sortAsc;
+    writeLS('ssn.sort', S.sortAsc ? 'asc' : 'desc');
+    renderFolders();
+    toast(S.sortAsc ? '由旧到新' : '由新到旧', 1200);
+  });
+
+  $('#folder-list').addEventListener('click', function (e) {
+    var more = e.target.closest('[data-more]');
+    if (more) { e.stopPropagation(); openFolderSheet(more.dataset.more); return; }
+
+    var my = e.target.closest('[data-mym]');
+    if (my) {
+      var p = my.dataset.mym.split('-');
+      S.tl = { y: Number(p[0]), m: Number(p[1]) };
+      renderTimeline();
+      var lf = $('#folder-list');
+      if (lf) lf.scrollTop = 0;
+      return;
+    }
+
+    var ax = e.target.closest('[data-cmt]');
+    if (ax) { e.stopPropagation(); openCommentPage(ax.dataset.cmt); return; }
+
+    var jt = e.target.closest('[data-jt]');
+    if (jt) { gotoMessage(jt.dataset.jt, jt.dataset.mid); return; }
+
+    var frow = e.target.closest('[data-fid]');
+    if (frow) {
+      var id = frow.dataset.fid;
+      S.folderView = { id: id, name: getFolderName(id) };
+      renderFolders();
+      $('#folder-list').scrollTop = 0;
+      return;
+    }
+
+    var trow = e.target.closest('[data-tid]');
+    if (trow) { openThread(trow.dataset.tid); return; }
+
+    var ex = e.target.closest('#btn-export');
+    if (ex) { doExport(); return; }
+    var im = e.target.closest('#btn-import');
+    if (im) { doImport(); return; }
+    var wp = e.target.closest('#btn-wipe');
+    if (wp) { doWipe(); return; }
+  });
+
+  // 长按文件夹 -> 重命名/删除
+  bindLongPress($('#folder-list'), '.frow[data-fid]', function (el) {
+    if (isArchive()) return;
+    var id = el.dataset.fid;
+    if (id === INBOX) return;
+    openFolderSheet(id);
+  });
+
+  // --- 搜索 ---
+  $('#search-cancel').addEventListener('click', closeSearch);
+  var si = $('#search-input');
+  var st = null;
+  si.addEventListener('input', function () {
+    clearTimeout(st);
+    var v = si.value;
+    st = setTimeout(function () { runSearch(v); }, 180);
+  });
+  si.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeSearch(); });
+  $('#search-res').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-goto]');
+    if (!b) return;
+    gotoMessage(b.dataset.goto, b.dataset.mid, !!b.dataset.cmt);
+  });
+
+  // --- 导入文件 ---
+  $('#file-input').addEventListener('change', function (e) {
+    var f = e.target.files && e.target.files[0];
+    if (f) handleImportFile(f);
+  });
+
+  // --- 手势 ---
+  bindSwipe($('#home'), function () {
+    if (!S.folderView) { S.tl = null; S.tlMode = 'folders'; }
+    openFolders();
+  });
+  bindSwipeBack($('#folders'));
+
+  // --- 键盘 ---
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      if ($('#cmt-layer').classList.contains('on')) return closeCommentPage();
+      if ($('#search-layer').classList.contains('on')) return closeSearch();
+      if ($('#sheet').classList.contains('on')) return closeSheet();
+      if (document.body.classList.contains('show-drawer')) return closeDrawer();
+      if (document.body.classList.contains('show-folders')) return closeFolders();
+    }
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); openSearch(); }
+  });
+
+  // --- 可视高度（键盘） ---
+  if (window.visualViewport) {
+    var relayout = function () {
+      var h = window.visualViewport.height;
+      if (h > 120) document.documentElement.style.setProperty('--app-h', h + 'px');
+    };
+    window.visualViewport.addEventListener('resize', relayout);
+    window.visualViewport.addEventListener('scroll', relayout);
+    relayout();
+  }
+
+  // 归档模式 UI 调整
+  if (isArchive()) {
+    var nb = $('#dr-new');
+    if (nb) nb.style.display = 'none';
+    var dt = $('#dr-data');
+    if (dt) dt.style.display = 'none';
+    var cm = $('#composer');
+    if (cm) {
+      cm.innerHTML = '<div style="text-align:center;font-size:11.5px;color:var(--text-3);' +
+        'padding:8px 0 4px;line-height:1.6">只读归档 · 左上角可切换对话</div>';
+    }
+  }
+
+  // 首次提示
+  if (!isArchive() && !readLS('ssn.tip', '')) {
+    setTimeout(function () { toast('左滑屏幕可以查看分类 →', 3200); writeLS('ssn.tip', '1'); }, 1600);
+  }
+}
+
+/* 长按 */
+function bindLongPress(root, sel, cb) {
+  var timer = null, sx = 0, sy = 0;
+  root.addEventListener('pointerdown', function (e) {
+    var el = e.target.closest(sel);
+    if (!el) return;
+    if (e.target.closest('button')) return;
+    sx = e.clientX; sy = e.clientY;
+    clearTimeout(timer);
+    timer = setTimeout(function () {
+      timer = null;
+      if (navigator.vibrate) { try { navigator.vibrate(8); } catch (er) {} }
+      cb(el);
+    }, 520);
+  }, { passive: true });
+  var cancel = function () { if (timer) { clearTimeout(timer); timer = null; } };
+  root.addEventListener('pointerup', cancel, { passive: true });
+  root.addEventListener('pointercancel', cancel, { passive: true });
+  root.addEventListener('pointermove', function (e) {
+    if (!timer) return;
+    if (Math.abs(e.clientX - sx) > 8 || Math.abs(e.clientY - sy) > 8) cancel();
+  }, { passive: true });
+  root.addEventListener('scroll', cancel, { passive: true });
+}
+
+/* 左滑进入分类 */
+function bindSwipe(el, onLeft) {
+  var sx = 0, sy = 0, axis = null, active = false, W = 1;
+  var home = $('#home'), folders = $('#folders');
+
+  var reset = function () {
+    document.body.classList.add('animating');
+    home.style.transform = '';
+    folders.style.transform = '';
+    setTimeout(function () { document.body.classList.remove('animating'); }, 360);
+  };
+
+  el.addEventListener('pointerdown', function (e) {
+    if (e.button != null && e.button !== 0) return;
+    if (document.body.classList.contains('show-drawer')) return;
+    if (e.target.closest('button,input,textarea,.composer,.imgs img,.dr-item')) return;
+    if (document.body.classList.contains('show-folders')) return;
+    sx = e.clientX; sy = e.clientY; axis = null; active = true;
+    W = el.clientWidth || window.innerWidth;
+  }, { passive: true });
+
+  el.addEventListener('pointermove', function (e) {
+    if (!active) return;
+    var dx = e.clientX - sx, dy = e.clientY - sy;
+    if (!axis) {
+      if (Math.abs(dx) > 9 || Math.abs(dy) > 9) {
+        axis = Math.abs(dx) > Math.abs(dy) * 1.25 ? 'x' : 'y';
+        if (axis === 'x') { document.body.classList.remove('animating'); }
+      } else return;
+    }
+    if (axis !== 'x') return;
+    if (dx > 0) dx = dx * 0.28;
+    if (dx < -W) dx = -W;
+    home.style.transform = 'translate3d(' + (dx * 0.22) + 'px,0,0)';
+    folders.style.transform = 'translate3d(calc(100% + ' + dx + 'px),0,0)';
+  }, { passive: true });
+
+  var end = function (e) {
+    if (!active) return;
+    active = false;
+    if (axis !== 'x') return;
+    var dx = (e.clientX || 0) - sx;
+    if (dx < -W * 0.22) { onLeft(); }
+    reset();
+  };
+  el.addEventListener('pointerup', end, { passive: true });
+  el.addEventListener('pointercancel', function () { active = false; if (axis === 'x') reset(); }, { passive: true });
+}
+
+/* 右滑返回 */
+function bindSwipeBack(el) {
+  var sx = 0, sy = 0, axis = null, active = false, W = 1;
+  var home = $('#home'), folders = $('#folders');
+
+  el.addEventListener('pointerdown', function (e) {
+    if (e.button != null && e.button !== 0) return;
+    if (!document.body.classList.contains('show-folders')) return;
+    if (e.target.closest('button,input,textarea')) return;
+    sx = e.clientX; sy = e.clientY; axis = null; active = true;
+    W = el.clientWidth || window.innerWidth;
+  }, { passive: true });
+
+  el.addEventListener('pointermove', function (e) {
+    if (!active) return;
+    var dx = e.clientX - sx, dy = e.clientY - sy;
+    if (!axis) {
+      if (Math.abs(dx) > 9 || Math.abs(dy) > 9) {
+        axis = Math.abs(dx) > Math.abs(dy) * 1.25 ? 'x' : 'y';
+        if (axis === 'x') document.body.classList.remove('animating');
+      } else return;
+    }
+    if (axis !== 'x') return;
+    if (dx < 0) dx = dx * 0.28;
+    if (dx > W) dx = W;
+    home.style.transform = 'translate3d(' + (-22 + dx / W * 22) + '%,0,0)';
+    folders.style.transform = 'translate3d(' + dx + 'px,0,0)';
+  }, { passive: true });
+
+  var end = function (e) {
+    if (!active) return;
+    active = false;
+    if (axis !== 'x') return;
+    var dx = (e.clientX || 0) - sx;
+    if (dx > W * 0.2) { closeFolders(); }
+    document.body.classList.add('animating');
+    home.style.transform = '';
+    folders.style.transform = '';
+    setTimeout(function () { document.body.classList.remove('animating'); }, 360);
+  };
+  el.addEventListener('pointerup', end, { passive: true });
+  el.addEventListener('pointercancel', function () { active = false; }, { passive: true });
+}
+
+/* =========================================================
+   15. 启动
+   ========================================================= */
+function boot() {
+  var root = document.getElementById('root');
+  var tpl = document.getElementById('app-shell');
+  if (!tpl) { showFatal(new Error('页面结构缺失')); return; }
+  root.appendChild(tpl.content.cloneNode(true));
+
+  var ad = document.getElementById('archive-data');
+  var raw = ad ? (ad.textContent || '').trim() : '';
+
+  var start;
+  if (raw.length > 2) {
+    start = new Promise(function (resolve) {
+      var payload = JSON.parse(raw);
+      initArchive(payload);
+      resolve();
+    });
+  } else {
+    start = initApp(false);
+  }
+
+  start.then(function () {
+    bindUI();
+    applyTheme(THEME, false);
+    renderHome();
+    renderFolders();
+    if (MEM_MODE) showMemBar();
+  }).catch(function (err) {
+    console.error(err);
+    showFatal(err);
+  });
+}
+
+boot();
+
+})();
+</script>
+</body>
+</html>
